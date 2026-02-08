@@ -1,74 +1,68 @@
-﻿/*---------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------------------
  *  Copyright (c) Ian Lucas. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Core.Attributes.Registration;
-using CounterStrikeSharp.API.Modules.Commands;
+using SwiftlyS2.Shared.Commands;
 
 namespace InventorySimulator;
 
 public partial class InventorySimulator
 {
-    [ConsoleCommand("css_ws", "Refreshes player's inventory.")]
-    public void OnWSCommand(CCSPlayerController? player, CommandInfo _)
+    [Command("ws")]
+    public void OnWSCommand(ICommandContext context)
     {
-        var url = invsim_ws_print_full_url.Value ? GetAPIUrl() : invsim_hostname.Value;
-        player?.PrintToChat(Localizer["invsim.announce", url]);
-
-        if (!invsim_ws_enabled.Value || player == null)
+        var player = context.Sender;
+        var url = UrlHelper.FormatUrl(ConVars.WsUrlPrintFormat.Value, ConVars.Url.Value);
+        player?.SendChat(Core.Localizer["invsim.announce", url]);
+        if (!ConVars.IsWsEnabled.Value || player == null)
             return;
-        if (PlayerCooldownManager.TryGetValue(player.SteamID, out var timestamp))
+        var controllerState = player.Controller.GetState();
+        var cooldown = ConVars.WsCooldown.Value;
+        var diff = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - controllerState.WsUpdatedAt;
+        if (diff < cooldown)
         {
-            var cooldown = invsim_ws_cooldown.Value;
-            var diff = Now() - timestamp;
+            player.SendChat(Core.Localizer["invsim.ws_cooldown", cooldown - diff]);
+            return;
+        }
+        if (controllerState.IsFetching)
+        {
+            player.SendChat(Core.Localizer["invsim.ws_in_progress"]);
+            return;
+        }
+        HandlePlayerInventoryRefresh(player, true);
+        player.SendChat(Core.Localizer["invsim.ws_new"]);
+    }
+
+    [Command("spray")]
+    public void OnSprayCommand(ICommandContext context)
+    {
+        var player = context.Sender;
+        if (player != null && ConVars.IsSprayEnabled.Value)
+        {
+            var controllerState = player.Controller.GetState();
+            var cooldown = ConVars.SprayCooldown.Value;
+            var diff = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - controllerState.SprayUsedAt;
             if (diff < cooldown)
             {
-                player.PrintToChat(Localizer["invsim.ws_cooldown", cooldown - diff]);
+                player.SendChat(Core.Localizer["invsim.spray_cooldown", cooldown - diff]);
                 return;
             }
-        }
-
-        if (FetchingPlayerInventory.ContainsKey(player.SteamID))
-        {
-            player.PrintToChat(Localizer["invsim.ws_in_progress"]);
-            return;
-        }
-
-        RefreshPlayerInventory(player, true);
-        player.PrintToChat(Localizer["invsim.ws_new"]);
-    }
-
-    [ConsoleCommand("css_spray", "Spray player's graffiti.")]
-    public void OnSprayCommand(CCSPlayerController? player, CommandInfo _)
-    {
-        if (player != null && invsim_spray_enabled.Value)
-        {
-            if (PlayerSprayCooldownManager.TryGetValue(player.SteamID, out var timestamp))
-            {
-                var cooldown = invsim_spray_cooldown.Value;
-                var diff = Now() - timestamp;
-                if (diff < cooldown)
-                {
-                    player.PrintToChat(Localizer["invsim.spray_cooldown", cooldown - diff]);
-                    return;
-                }
-            }
-
-            SprayPlayerGraffiti(player);
+            HandlePlayerGraffitiSpray(player);
         }
     }
 
-    [ConsoleCommand("css_wslogin", "Authenticate player to Inventory Simulator.")]
-    public void OnWsloginCommand(CCSPlayerController? player, CommandInfo _)
+    [Command("wslogin")]
+    public void OnWsloginCommand(ICommandContext context)
     {
-        if (invsim_apikey.Value != "" && invsim_wslogin.Value && player != null)
+        var player = context.Sender;
+        if (ConVars.IsWsLogin.Value && Api.HasApiKey() && player != null)
         {
-            player.PrintToChat(Localizer["invsim.login_in_progress"]);
-            if (AuthenticatingPlayer.ContainsKey(player.SteamID))
+            var controllerState = player.Controller.GetState();
+            player.SendChat(Core.Localizer["invsim.login_in_progress"]);
+            if (controllerState.IsAuthenticating)
                 return;
-            SendSignIn(player.SteamID);
+            HandleSignIn(player);
         }
     }
 }

@@ -1,10 +1,9 @@
-﻿/*---------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------------------
  *  Copyright (c) Ian Lucas. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Memory;
 
 namespace InventorySimulator;
 
@@ -17,28 +16,23 @@ public partial class InventorySimulator : BasePlugin
 
     public override void Load(bool hotReload)
     {
-        RegisterListener<Listeners.OnTick>(OnTick);
+        CSS.Initialize(this);
+        ConVars.Initialize();
         RegisterListener<Listeners.OnEntityCreated>(OnEntityCreated);
-        RegisterEventHandler<EventPlayerConnect>(OnPlayerConnect);
-        RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
-        RegisterEventHandler<EventRoundPrestart>(OnRoundPrestart);
-        RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
-        VirtualFunctions.GiveNamedItemFunc.Hook(OnGiveNamedItemPost, HookMode.Post);
-        Extensions.UpdateSelectTeamPreview.Hook(OnUpdateSelectTeamPreview, HookMode.Post);
-        RegisterEventHandler<EventPlayerDeath>(OnPlayerDeathPre, HookMode.Pre);
-        RegisterEventHandler<EventRoundMvp>(OnRoundMvpPre, HookMode.Pre);
-        RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
+        RegisterListener<Listeners.OnEntityDeleted>(OnEntityDeleted);
+        Natives.CCSPlayerController_ProcessUsercmds.Hook(OnClientProcessUsercmds, HookMode.Post);
+        RegisterEventHandler<EventPlayerConnect>(OnPlayerConnect, HookMode.Post);
+        RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull, HookMode.Post);
+        RegisterEventHandler<EventPlayerDeath>(OnPlayerDeathPre);
+        RegisterEventHandler<EventRoundMvp>(OnRoundMvpPre);
+        Natives.CCSPlayer_ItemServices_GiveNamedItem.Hook(OnGiveNamedItem);
+        Natives.CCSPlayerInventory_GetItemInLoadout.Hook(OnGetItemInLoadout);
+        HandleFileChanged();
+        HandleIsRequireInventoryChanged();
+    }
 
-        invsim_file.ValueChanged += OnInvsimFileChanged;
-        OnInvsimFileChanged(null, invsim_file.Value);
-
-        invsim_require_inventory.ValueChanged += OnInvSimRequireInventoryChange;
-        OnInvSimRequireInventoryChange(null, invsim_require_inventory.Value);
-
-        invsim_compatibility_mode.ValueChanged += OnInvSimCompatibilityModeChange;
-        OnInvSimCompatibilityModeChange(null, invsim_compatibility_mode.Value);
-
-        invsim_spray_on_use.ValueChanged += OnInvSimSprayOnUseChange;
-        OnInvSimSprayOnUseChange(null, invsim_spray_on_use.Value);
+    public override void Unload(bool hotReload)
+    {
+        CCSPlayerControllerState.ClearAllEconItemView();
     }
 }

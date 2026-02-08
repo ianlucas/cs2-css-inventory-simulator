@@ -1,76 +1,110 @@
-﻿/*---------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------------------
  *  Copyright (c) Ian Lucas. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-using CounterStrikeSharp.API;
-using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
+using System.Runtime.InteropServices;
+using SwiftlyS2.Shared.SchemaDefinitions;
 
 namespace InventorySimulator;
 
 public partial class InventorySimulator
 {
-    public HookResult OnConnect(DynamicHook hook)
+    public Natives.CServerSideClientBase_ActivatePlayerDelegate OnActivatePlayer(
+        Func<Natives.CServerSideClientBase_ActivatePlayerDelegate> next
+    )
     {
-        ServerSideClientUserid[hook.GetParam<IntPtr>(0)] = hook.GetParam<short>(3);
-        return HookResult.Continue;
-    }
-
-    public HookResult OnSetSignonState(DynamicHook hook)
-    {
-        short? userid = ServerSideClientUserid.TryGetValue(hook.GetParam<IntPtr>(0), out var u) ? u : null;
-        var state = hook.GetParam<uint>(1);
-        if (userid != null)
+        return (thisPtr) =>
         {
-            var player = Utilities.GetPlayerFromUserid((int)userid);
-            if (player != null && !player.IsBot)
+            var userid = (ushort)
+                Marshal.ReadInt16(thisPtr + Natives.CServerSideClientBase_m_UserID);
+            var player = Core.PlayerManager.GetPlayer(userid);
+            if (player != null && !player.IsFakeClient && player.Controller != null)
             {
-                if (!FetchingPlayerInventory.ContainsKey(player.SteamID))
-                    RefreshPlayerInventory(player);
-                var allowed = PlayerInventoryManager.ContainsKey(player.SteamID);
-                if (state >= 0 && !allowed)
+                player.Controller.Revalidate();
+                var controllerState = player.Controller.GetState();
+                if (controllerState.Inventory == null)
                 {
-                    return HookResult.Stop;
+                    controllerState.PostFetchCallback = () =>
+                        Core.Scheduler.NextWorldUpdate(() =>
+                        {
+                            if (player.Controller.IsValid)
+                                Natives.CServerSideClientBase_ActivatePlayer.CallOriginal(thisPtr);
+                        });
+                    if (!controllerState.IsFetching)
+                        HandlePlayerInventoryRefresh(player);
+                    return;
                 }
             }
-        }
-        return HookResult.Continue;
+            next()(thisPtr);
+        };
     }
 
-    public HookResult OnUpdateSelectTeamPreview(DynamicHook hook)
+    public Natives.CCSPlayer_ItemServices_GiveNamedItemDelegate OnGiveNamedItem(
+        Func<Natives.CCSPlayer_ItemServices_GiveNamedItemDelegate> next
+    )
     {
-        var player = hook.GetParam<CCSPlayerController>(0);
-        GiveTeamPreviewItems("team_select", player);
-        return HookResult.Continue;
-    }
-
-    public HookResult OnProcessUsercmdsPost(DynamicHook hook)
-    {
-        if (!invsim_spray_on_use.Value)
-            return HookResult.Continue;
-
-        var player = hook.GetParam<CCSPlayerController>(0);
-        SprayPlayerGraffitiThruPlayerButtons(player);
-
-        return HookResult.Continue;
-    }
-
-    public HookResult OnGiveNamedItemPost(DynamicHook hook)
-    {
-        var className = hook.GetParam<string>(1);
-        if (!className.Contains("weapon"))
-            return HookResult.Continue;
-
-        var itemServices = hook.GetParam<CCSPlayer_ItemServices>(0);
-        var weapon = hook.GetReturn<CBasePlayerWeapon>();
-        var player = GetPlayerFromItemServices(itemServices);
-
-        if (player != null)
+        return (thisPtr, pchName, a3, pScriptItem, a5, a6) =>
         {
-            GivePlayerWeaponSkin(player, weapon);
-        }
+            var designerName = Marshal.PtrToStringUTF8(pchName);
+            if (designerName != null && pScriptItem == nint.Zero)
+            {
+                var itemServices = Core.Memory.ToSchemaClass<CCSPlayer_ItemServices>(thisPtr);
+                var controller = itemServices.GetController();
+                if (controller?.SteamID != 0 && controller?.InventoryServices != null)
+                {
+                    var itemDef = SchemaHelper
+                        .GetItemSchema()
+                        ?.GetItemDefinitionByName(designerName);
+                    if (itemDef != null)
+                    {
+                        var controllerState = controller.GetState();
+                        var item = controllerState.Inventory?.GetItemForSlot(
+                            controller.TeamNum,
+                            itemDef.DefaultLoadoutSlot,
+                            itemDef.DefIndex,
+                            ConVars.IsFallbackTeam.Value
+                        );
+                        if (item != null)
+                            pScriptItem = controllerState.GetEconItemView(
+                                controller.TeamNum,
+                                (int)itemDef.DefaultLoadoutSlot,
+                                item
+                            );
+                    }
+                }
+            }
+            return next()(thisPtr, pchName, a3, pScriptItem, a5, a6);
+        };
+    }
 
-        return HookResult.Continue;
+    public Natives.CCSPlayerInventory_GetItemInLoadoutDelegate OnGetItemInLoadout(
+        Func<Natives.CCSPlayerInventory_GetItemInLoadoutDelegate> next
+    )
+    {
+        return (thisPtr, team, slot) =>
+        {
+            var ret = next()(thisPtr, team, slot);
+            var inventory = new CCSPlayerInventory(thisPtr);
+            if (!inventory.IsValid)
+                return ret;
+            var itemView = Core.Memory.ToSchemaClass<CEconItemView>(ret);
+            if (!itemView.IsValid)
+                return ret;
+            var player = Core.PlayerManager.GetPlayerFromSteamID(inventory.SOCache.Owner.SteamID);
+            if (player == null)
+                return ret;
+            var controllerState = player.Controller.GetState();
+            var item = controllerState.Inventory?.GetItemForSlot(
+                (byte)team,
+                (loadout_slot_t)slot,
+                itemView.ItemDefinitionIndex,
+                ConVars.IsFallbackTeam.Value,
+                ConVars.MinModels.Value
+            );
+            if (item != null)
+                return controllerState.GetEconItemView(team, slot, item, ret);
+            return ret;
+        };
     }
 }
