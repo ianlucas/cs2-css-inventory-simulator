@@ -4,28 +4,26 @@
  *--------------------------------------------------------------------------------------------*/
 
 using System.Runtime.InteropServices;
-using SwiftlyS2.Shared.Natives;
-using SwiftlyS2.Shared.SchemaDefinitions;
+using CounterStrikeSharp.API.Core;
 
 namespace InventorySimulator;
 
 // Thanks to @samyycX.
-public class CCSPlayerInventory(nint address) : INativeHandle
+public class CCSPlayerInventory(nint handle)
 {
-    public nint Address { get; set; } = address;
-    public bool IsValid => Address != 0 && SOCache.IsValid;
+    public nint Handle { get; set; } = handle;
+    public bool IsValid => Handle != 0 && SOCache.IsValid;
     public ulong SteamID => SOCache.Owner.SteamID;
 
-    public CGCClientSharedObjectCache SOCache =>
-        new(Marshal.ReadIntPtr(Address + Natives.CCSPlayerInventory_m_pSOCache));
+    public CGCClientSharedObjectCache SOCache => new(Marshal.ReadIntPtr(Handle + Natives.CCSPlayerInventory_m_pSOCache));
 
     public nint GetItemInLoadout(byte team, loadout_slot_t slot)
     {
-        return Natives.CCSPlayerInventory_GetItemInLoadout.Call(Address, team, (int)slot);
+        return Natives.CCSPlayerInventory_GetItemInLoadout.Invoke(Handle, team, (int)slot);
     }
 
     public void SendInventoryUpdateEvent()
     {
-        Natives.CCSPlayerInventory_SendInventoryUpdateEvent.Call(Address);
+        Natives.CCSPlayerInventory_SendInventoryUpdateEvent.Invoke(Handle);
     }
 }
