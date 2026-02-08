@@ -1,4 +1,4 @@
-﻿/*---------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------------------
  *  Copyright (c) Ian Lucas. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
@@ -17,28 +17,25 @@ public partial class InventorySimulator : BasePlugin
 
     public override void Load(bool hotReload)
     {
-        RegisterListener<Listeners.OnTick>(OnTick);
+        CSS.Initialize(this);
+        ConVars.Initialize(this);
         RegisterListener<Listeners.OnEntityCreated>(OnEntityCreated);
-        RegisterEventHandler<EventPlayerConnect>(OnPlayerConnect);
-        RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
-        RegisterEventHandler<EventRoundPrestart>(OnRoundPrestart);
-        RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
-        VirtualFunctions.GiveNamedItemFunc.Hook(OnGiveNamedItemPost, HookMode.Post);
-        Extensions.UpdateSelectTeamPreview.Hook(OnUpdateSelectTeamPreview, HookMode.Post);
-        RegisterEventHandler<EventPlayerDeath>(OnPlayerDeathPre, HookMode.Pre);
-        RegisterEventHandler<EventRoundMvp>(OnRoundMvpPre, HookMode.Pre);
-        RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
+        RegisterListener<Listeners.OnEntityDeleted>(OnEntityDeleted);
+        RegisterEventHandler<EventPlayerConnect>(OnPlayerConnect, HookMode.Post);
+        RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull, HookMode.Post);
+        RegisterEventHandler<EventPlayerDeath>(OnPlayerDeathPre);
+        RegisterEventHandler<EventRoundMvp>(OnRoundMvpPre);
+        Natives.CCSPlayerController_ProcessUsercmds.Hook(OnProcessUsercmds, HookMode.Post);
+        VirtualFunctions.GiveNamedItemFunc.Hook(OnGiveNamedItemPre, HookMode.Pre);
+        Natives.CCSPlayerInventory_GetItemInLoadout.Hook(GetItemInLoadout, HookMode.Post);
+        ConVars.File.ValueChanged += HandleFileChanged;
+        ConVars.IsRequireInventory.ValueChanged += HandleIsRequireInventoryChanged;
+        HandleFileChanged(null, ConVars.File.Value);
+        HandleIsRequireInventoryChanged(null, ConVars.IsRequireInventory.Value);
+    }
 
-        invsim_file.ValueChanged += OnInvsimFileChanged;
-        OnInvsimFileChanged(null, invsim_file.Value);
-
-        invsim_require_inventory.ValueChanged += OnInvSimRequireInventoryChange;
-        OnInvSimRequireInventoryChange(null, invsim_require_inventory.Value);
-
-        invsim_compatibility_mode.ValueChanged += OnInvSimCompatibilityModeChange;
-        OnInvSimCompatibilityModeChange(null, invsim_compatibility_mode.Value);
-
-        invsim_spray_on_use.ValueChanged += OnInvSimSprayOnUseChange;
-        OnInvSimSprayOnUseChange(null, invsim_spray_on_use.Value);
+    public override void Unload(bool hotReload)
+    {
+        CCSPlayerControllerState.ClearAllEconItemView();
     }
 }

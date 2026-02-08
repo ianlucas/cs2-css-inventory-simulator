@@ -1,23 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BaseOutputPath>bin\</BaseOutputPath>
+    <OutputPath>$(BaseOutputPath)Release\plugins\InventorySimulator</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
 
-	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<BaseOutputPath>bin\</BaseOutputPath>
-		<OutputPath>$(BaseOutputPath)Release\plugins\InventorySimulator</OutputPath>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-	</PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.358" />
+    <LangFiles Include="source\InventorySimulator\lang\**\*.*" />
+  </ItemGroup>
 
-	<ItemGroup>
-		<PackageReference Include="CounterStrikeSharp.API" Version="1.0.358" />
-		<LangFiles Include="source\InventorySimulator\lang\**\*.*" />
-	</ItemGroup>
-
-	<Target Name="PostBuild" AfterTargets="Build">
-		<Copy SourceFiles="@(LangFiles)" DestinationFolder="$(OutputPath)\lang" />
-		<Copy SourceFiles="gamedata\inventory-simulator.json" DestinationFolder="$(OutputPath)\..\..\gamedata" />
-	</Target>
-
+  <Target Name="PostBuild" AfterTargets="Build">
+    <Copy SourceFiles="@(LangFiles)" DestinationFolder="$(OutputPath)\lang" />
+    <Copy
+      SourceFiles="gamedata\inventory-simulator.json"
+      DestinationFolder="$(OutputPath)\..\..\gamedata"
+    />
+  </Target>
 </Project>

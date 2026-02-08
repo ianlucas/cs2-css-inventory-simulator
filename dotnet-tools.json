@@ -3,8 +3,8 @@
   "isRoot": true,
   "tools": {
     "csharpier": {
-      "version": "0.30.5",
-      "commands": ["dotnet-csharpier"],
+      "version": "1.2.1",
+      "commands": ["csharpier"],
       "rollForward": false
     }
   }
