@@ -128,7 +128,7 @@ public partial class InventorySimulator
             return;
         item.Stattrak += 1;
         var statTrak = TypeHelper.ViewAs<int, float>(item.Stattrak.Value);
-        weapon.AttributeManager.Item.NetworkedDynamicAttributes.SetOrAddAttribute(
+        weapon.AttributeManager.Item.NetworkedDynamicAttributes.SetOrAddAttributeValueByName(
             "kill eater",
             statTrak
         );

@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Memory;
 
 namespace InventorySimulator;
 
@@ -25,7 +26,7 @@ public partial class InventorySimulator : BasePlugin
         RegisterEventHandler<EventPlayerDeath>(OnPlayerDeathPre);
         RegisterEventHandler<EventRoundMvp>(OnRoundMvpPre);
         Natives.CCSPlayerController_ProcessUsercmds.Hook(OnProcessUsercmds, HookMode.Post);
-        Natives.CCSPlayer_ItemServices_GiveNamedItem.Hook(OnGiveNamedItemPre, HookMode.Pre);
+        VirtualFunctions.GiveNamedItemFunc.Hook(OnGiveNamedItemPre, HookMode.Pre);
         Natives.CCSPlayerInventory_GetItemInLoadout.Hook(GetItemInLoadout, HookMode.Pre);
         ConVars.File.ValueChanged += HandleFileChanged;
         ConVars.IsRequireInventory.ValueChanged += HandleIsRequireInventoryChanged;

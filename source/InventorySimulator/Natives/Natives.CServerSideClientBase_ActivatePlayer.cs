@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 
 namespace InventorySimulator;
@@ -11,6 +12,7 @@ namespace InventorySimulator;
 public static partial class Natives
 {
     public static readonly MemoryFunctionVoid<nint> CServerSideClientBase_ActivatePlayer = new(
-        GameData.GetSignature("CServerSideClientBase::ActivatePlayer")
+        GameData.GetSignature("CServerSideClientBase::ActivatePlayer"),
+        Addresses.EnginePath
     );
 }

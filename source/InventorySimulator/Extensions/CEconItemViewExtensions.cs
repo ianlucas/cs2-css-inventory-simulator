@@ -39,6 +39,6 @@ public static class CEconItemViewExtensions
         var attrs = self.NetworkedDynamicAttributes;
         attrs.Attributes.RemoveAll();
         foreach (var (attributeName, value) in customAttrs)
-            attrs.SetOrAddAttribute(attributeName, value);
+            attrs.SetOrAddAttributeValueByName(attributeName, value);
     }
 }
