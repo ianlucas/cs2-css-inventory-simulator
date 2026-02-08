@@ -3,12 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-using SwiftlyS2.Shared.Events;
-using SwiftlyS2.Shared.GameEventDefinitions;
-using SwiftlyS2.Shared.Natives;
-using SwiftlyS2.Shared.Players;
-using SwiftlyS2.Shared.SchemaDefinitions;
-using SwiftlyS2.Shared.SteamAPI;
+using CounterStrikeSharp.API;
+using CounterStrikeSharp.API.Core;
 
 namespace InventorySimulator;
 
@@ -18,9 +14,9 @@ public partial class InventorySimulator
     // Connection & Initialization
     // ========================================================================
 
-    public void HandlePlayerConnect(IPlayer player)
+    public void HandlePlayerConnect(CCSPlayerController player)
     {
-        player.Controller.Revalidate();
+        player.Revalidate();
         HandlePlayerInventoryRefresh(player);
     }
 
@@ -28,9 +24,9 @@ public partial class InventorySimulator
     // Inventory Fetch & Load Operations
     // ========================================================================
 
-    public static async Task HandlePlayerInventoryFetch(IPlayer player, bool force = false)
+    public static async Task HandlePlayerInventoryFetch(CCSPlayerController player, bool force = false)
     {
-        var controllerState = player.Controller.GetState();
+        var controllerState = player.GetState();
         var existing = controllerState.Inventory;
         if (!force && controllerState.Inventory != null)
             return;
@@ -51,44 +47,41 @@ public partial class InventorySimulator
         controllerState.TriggerPostFetch();
     }
 
-    public async void HandlePlayerInventoryRefresh(IPlayer player, bool force = false)
+    public async void HandlePlayerInventoryRefresh(CCSPlayerController player, bool force = false)
     {
         if (!force)
         {
             await HandlePlayerInventoryFetch(player);
-            Core.Scheduler.NextWorldUpdate(() =>
+            Server.NextWorldUpdate(() =>
             {
                 if (player.IsValid)
                     HandlePlayerInventoryLoad(player);
             });
             return;
         }
-        var oldInventory = player.Controller.GetState().Inventory;
+        var oldInventory = player.GetState().Inventory;
         await HandlePlayerInventoryFetch(player, true);
-        Core.Scheduler.NextWorldUpdate(() =>
+        Server.NextWorldUpdate(() =>
         {
             if (player.IsValid)
             {
-                player.SendChat(Core.Localizer["invsim.ws_completed"]);
+                player.PrintToChat(Localizer["invsim.ws_completed"]);
                 HandlePlayerInventoryLoad(player);
                 HandlePostPlayerInventoryRefresh(player, oldInventory);
             }
         });
     }
 
-    public static void HandlePlayerInventoryLoad(IPlayer player)
+    public static void HandlePlayerInventoryLoad(CCSPlayerController player)
     {
-        var inventory = player.Controller.InventoryServices?.GetInventory();
+        var inventory = player.InventoryServices?.GetInventory();
         if (inventory?.IsValid == true)
             inventory.SendInventoryUpdateEvent();
     }
 
-    public static void HandlePostPlayerInventoryRefresh(
-        IPlayer player,
-        PlayerInventory? oldInventory
-    )
+    public static void HandlePostPlayerInventoryRefresh(CCSPlayerController player, PlayerInventory? oldInventory)
     {
-        var inventory = player.Controller.GetState().Inventory;
+        var inventory = player.GetState().Inventory;
         if (inventory != null && ConVars.IsWsImmediately.Value)
         {
             player.RegiveAgent(inventory, oldInventory);
@@ -101,48 +94,36 @@ public partial class InventorySimulator
     // Runtime: StatTrak Operations
     // ========================================================================
 
-    public void HandlePlayerWeaponStatTrakIncrement(
-        IPlayer player,
-        string designerName,
-        string weaponItemId
-    )
+    public void HandlePlayerWeaponStatTrakIncrement(CCSPlayerController player, string designerName, string weaponItemId)
     {
-        var weapon = player.PlayerPawn?.WeaponServices?.ActiveWeapon.Value;
+        var weapon = player.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Value;
         if (
             weapon == null
             || !weapon.HasCustomItemID()
-            || weapon.AttributeManager.Item.AccountID
-                != new CSteamID(player.SteamID).GetAccountID().m_AccountID
+            || weapon.AttributeManager.Item.AccountID != new CSteamID(player.SteamID).GetAccountID().m_AccountID
             || weapon.AttributeManager.Item.ItemID != ulong.Parse(weaponItemId)
         )
             return;
-        var inventory = player.Controller.GetState().Inventory;
+        var inventory = player.GetState().Inventory;
         var isFallbackTeam = ConVars.IsFallbackTeam.Value;
         var item = ItemHelper.IsMeleeDesignerName(designerName)
-            ? inventory?.GetKnife(player.Controller.TeamNum, isFallbackTeam)
-            : inventory?.GetWeapon(
-                player.Controller.TeamNum,
-                weapon.AttributeManager.Item.ItemDefinitionIndex,
-                isFallbackTeam
-            );
+            ? inventory?.GetKnife(player.TeamNum, isFallbackTeam)
+            : inventory?.GetWeapon(player.TeamNum, weapon.AttributeManager.Item.ItemDefinitionIndex, isFallbackTeam);
         if (item == null || item.Stattrak == null || item.Uid == null)
             return;
         item.Stattrak += 1;
         var statTrak = TypeHelper.ViewAs<int, float>(item.Stattrak.Value);
-        weapon.AttributeManager.Item.NetworkedDynamicAttributes.SetOrAddAttribute(
-            "kill eater",
-            statTrak
-        );
+        weapon.AttributeManager.Item.NetworkedDynamicAttributes.SetOrAddAttribute("kill eater", statTrak);
         HandleStatTrakIncrement(player.SteamID, item.Uid.Value);
     }
 
-    public static void HandlePlayerMusicKitStatTrakIncrement(EventRoundMvp @event, IPlayer player)
+    public static void HandlePlayerMusicKitStatTrakIncrement(EventRoundMvp @event, CCSPlayerController player)
     {
-        var item = player.Controller.GetState().Inventory?.MusicKit;
+        var item = player.GetState().Inventory?.MusicKit;
         if (item != null && item.Uid != null && item.Stattrak != null && item.Stattrak >= 0)
         {
             item.Stattrak += 1;
-            @event.MusickItMvps = item.Stattrak.Value;
+            @event.Musickitmvps = item.Stattrak.Value;
             HandleStatTrakIncrement(player.SteamID, item.Uid.Value);
         }
     }
@@ -157,38 +138,35 @@ public partial class InventorySimulator
     // Runtime: Graffiti/Spray Operations
     // ========================================================================
 
-    public void HandleClientProcessUsercmds(IPlayer player)
+    public void HandleClientProcessUsercmds(CCSPlayerController player)
     {
-        if (
-            (player.PressedButtons & GameButtonFlags.E) != 0
-            && player.PlayerPawn?.IsAbleToApplySpray() == true
-        )
+        if ((player.Buttons & PlayerButtons.Use) != 0 && player.PlayerPawn.Value?.IsAbleToApplySpray() == true)
         {
-            var controllerState = player.Controller.GetState();
+            var controllerState = player.GetState();
             if (player.IsUseCmdBusy())
                 controllerState.IsUseCmdBlocked = true;
             controllerState.DisposeUseCmdTimer();
-            controllerState.UseCmdTimer = Core.Scheduler.DelayBySeconds(
+            controllerState.UseCmdTimer = AddTimer(
                 0.1f,
                 () =>
                 {
                     if (controllerState.IsUseCmdBlocked)
                         controllerState.IsUseCmdBlocked = false;
                     else if (player.IsValid && !player.IsUseCmdBusy())
-                        player.ExecuteCommand("css_spray");
+                        player.ExecuteClientCommandFromServer("css_spray");
                 }
             );
         }
     }
 
-    public unsafe void HandlePlayerGraffitiSpray(IPlayer player)
+    public unsafe void HandlePlayerGraffitiSpray(CCSPlayerController player)
     {
         if (!player.IsValid)
             return;
-        var item = player.Controller.GetState().Inventory?.Graffiti;
+        var item = player.GetState().Inventory?.Graffiti;
         if (item == null || item.Def == null || item.Tint == null)
             return;
-        var pawn = player.PlayerPawn;
+        var pawn = player.PlayerPawn.Value;
         if (pawn == null || pawn.LifeState != (int)LifeState_t.LIFE_ALIVE)
             return;
         var movementServices = pawn.MovementServices?.As<CCSPlayer_MovementServices>();
@@ -197,38 +175,34 @@ public partial class InventorySimulator
         var trace = stackalloc CGameTrace[1];
         if (!pawn.IsAbleToApplySpray((nint)trace) || (nint)trace == nint.Zero)
             return;
-        SprayCanShakeSound.Recipients.AddRecipient(player.PlayerID);
-        SprayCanShakeSound.Emit();
-        SprayCanShakeSound.Recipients.RemoveRecipient(player.PlayerID);
-        player.Controller.GetState().SprayUsedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var sprayDecal = Core.EntitySystem.CreateEntityByDesignerName<CPlayerSprayDecal>(
-            "player_spray_decal"
-        );
+        player.EmitSound("SprayCan.Shake");
+        player.GetState().SprayUsedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var endPos = SchemaHelper.ToVector(trace->EndPos);
+        var hitNormal = SchemaHelper.ToVector(trace->HitNormal);
+        var sprayDecal = Utilities.CreateEntityByName<CPlayerSprayDecal>("player_spray_decal");
         if (sprayDecal != null)
         {
-            sprayDecal.EndPos += trace->EndPos;
-            sprayDecal.Start += trace->EndPos;
-            sprayDecal.Left += movementServices.Left;
-            sprayDecal.Normal += trace->HitNormal;
+            sprayDecal.EndPos.Add(endPos);
+            sprayDecal.Start.Add(endPos);
+            sprayDecal.Left.Add(movementServices.Left);
+            sprayDecal.Normal.Add(hitNormal);
             sprayDecal.AccountID = (uint)player.SteamID;
             sprayDecal.Player = item.Def.Value;
             sprayDecal.TintID = item.Tint.Value;
             sprayDecal.DispatchSpawn();
-            SprayCanPaintSound.Recipients.AddRecipient(player.PlayerID);
-            SprayCanPaintSound.Emit();
-            SprayCanPaintSound.Recipients.RemoveRecipient(player.PlayerID);
+            player.EmitSound("SprayCan.Paint");
         }
     }
 
-    public static void HandlePlayerSprayDecalCreated(IPlayer player, CPlayerSprayDecal sprayDecal)
+    public static void HandlePlayerSprayDecalCreated(CCSPlayerController player, CPlayerSprayDecal sprayDecal)
     {
-        var item = player.Controller.GetState().Inventory?.Graffiti;
+        var item = player.GetState().Inventory?.Graffiti;
         if (item != null && item.Def != null && item.Tint != null)
         {
             sprayDecal.Player = item.Def.Value;
-            sprayDecal.PlayerUpdated();
+            Utilities.SetStateChanged(sprayDecal, "CPlayerSprayDecal", "m_nPlayer");
             sprayDecal.TintID = item.Tint.Value;
-            sprayDecal.TintIDUpdated();
+            Utilities.SetStateChanged(sprayDecal, "CPlayerSprayDecal", "m_nTintID");
         }
     }
 
@@ -236,27 +210,22 @@ public partial class InventorySimulator
     // Runtime: Authentication
     // ========================================================================
 
-    public async void HandleSignIn(IPlayer player)
+    public async void HandleSignIn(CCSPlayerController player)
     {
-        var controllerState = player.Controller.GetState();
+        var controllerState = player.GetState();
         if (controllerState.IsFetching)
             return;
         controllerState.IsFetching = true;
         var response = await Api.SendSignIn(player.SteamID.ToString());
         controllerState.IsFetching = false;
-        Core.Scheduler.NextWorldUpdate(() =>
+        Server.NextWorldUpdate(() =>
         {
             if (response == null)
             {
-                player?.SendChat(Core.Localizer["invsim.login_failed"]);
+                player?.PrintToChat(Localizer["invsim.login_failed"]);
                 return;
             }
-            player?.SendChat(
-                Core.Localizer[
-                    "invsim.login",
-                    $"{Api.GetUrl("/api/sign-in/callback")}?token={response.Token}"
-                ]
-            );
+            player?.PrintToChat(Localizer["invsim.login", $"{Api.GetUrl("/api/sign-in/callback")}?token={response.Token}"]);
         });
     }
 
@@ -264,22 +233,20 @@ public partial class InventorySimulator
     // Configuration & File Management
     // ========================================================================
 
-    public void HandleFileChanged()
+    public void HandleFileChanged(object? _, string value)
     {
-        if (Inventories.Load())
-            foreach (var player in Core.PlayerManager.GetAllPlayers())
+        if (Inventories.Load(value))
+            foreach (var player in Utilities.GetPlayers().Where(p => !p.IsBot))
                 if (Inventories.TryGet(player.SteamID, out var inventory))
-                    player.Controller.GetState().Inventory = inventory;
+                    player.GetState().Inventory = inventory;
     }
 
-    public void HandleIsRequireInventoryChanged()
+    public void HandleIsRequireInventoryChanged(object? _, bool value)
     {
         if (ConVars.IsRequireInventory.Value)
-            OnActivatePlayerHookGuid = Natives.CServerSideClientBase_ActivatePlayer.AddHook(
-                OnActivatePlayer
-            );
-        else if (OnActivatePlayerHookGuid != null)
-            Natives.CServerSideClientBase_ActivatePlayer.RemoveHook(OnActivatePlayerHookGuid.Value);
+            Natives.CServerSideClientBase_ActivatePlayer.Hook(OnActivatePlayerPre, HookMode.Pre);
+        else
+            Natives.CServerSideClientBase_ActivatePlayer.Unhook(OnActivatePlayerPre, HookMode.Pre);
     }
 
     // ========================================================================

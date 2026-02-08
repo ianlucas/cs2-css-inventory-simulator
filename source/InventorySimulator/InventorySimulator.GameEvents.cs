@@ -3,48 +3,47 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-using SwiftlyS2.Shared.GameEventDefinitions;
-using SwiftlyS2.Shared.Misc;
+
+using CounterStrikeSharp.API.Core;
 
 namespace InventorySimulator;
 
 public partial class InventorySimulator
 {
-    public HookResult OnPlayerConnect(EventPlayerConnect @event)
+    public HookResult OnPlayerConnect(EventPlayerConnect @event, GameEventInfo _)
     {
-        var player = @event.UserIdPlayer;
-        if (player != null && !player.IsFakeClient)
+        var player = @event.Userid;
+        if (player != null && !player.IsBot)
             HandlePlayerConnect(player);
         return HookResult.Continue;
     }
 
-    public HookResult OnPlayerConnectFull(EventPlayerConnectFull @event)
+    public HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo _)
     {
-        var player = @event.UserIdPlayer;
-        if (player != null && !player.IsFakeClient)
+        var player = @event.Userid;
+        if (player != null && !player.IsBot)
             HandlePlayerConnect(player);
         return HookResult.Continue;
     }
 
-    public HookResult OnPlayerDeathPre(EventPlayerDeath @event)
+    public HookResult OnPlayerDeathPre(EventPlayerDeath @event, GameEventInfo _)
     {
-        var attacker = Core.PlayerManager.GetPlayer(@event.Attacker);
-        var victim = @event.UserIdPlayer;
+        var attacker = @event.Attacker;
+        var victim = @event.Userid;
         if (attacker != null && victim != null)
         {
-            var isAttackerValid = !attacker.IsFakeClient && attacker.IsValid;
-            var isVictimValid =
-                (!ConVars.IsStatTrakIgnoreBots.Value || !victim.IsFakeClient) && victim.IsValid;
+            var isAttackerValid = !attacker.IsBot && attacker.IsValid;
+            var isVictimValid = (!ConVars.IsStatTrakIgnoreBots.Value || !victim.IsBot) && victim.IsValid;
             if (isAttackerValid && isVictimValid)
                 HandlePlayerWeaponStatTrakIncrement(attacker, @event.Weapon, @event.WeaponItemid);
         }
         return HookResult.Continue;
     }
 
-    public HookResult OnRoundMvpPre(EventRoundMvp @event)
+    public HookResult OnRoundMvpPre(EventRoundMvp @event, GameEventInfo _)
     {
-        var player = @event.UserIdPlayer;
-        if (player != null && !player.IsFakeClient && player.IsValid)
+        var player = @event.Userid;
+        if (player != null && !player.IsBot && player.IsValid)
             HandlePlayerMusicKitStatTrakIncrement(@event, player);
         return HookResult.Continue;
     }

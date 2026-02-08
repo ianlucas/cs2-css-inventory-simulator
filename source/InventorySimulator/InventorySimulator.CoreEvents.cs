@@ -3,59 +3,35 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-using SwiftlyS2.Shared.Events;
-using SwiftlyS2.Shared.SchemaDefinitions;
+using CounterStrikeSharp.API;
+using CounterStrikeSharp.API.Core;
 
 namespace InventorySimulator;
 
 public partial class InventorySimulator
 {
-    public void OnConVarValueChanged(IOnConVarValueChanged @event)
+    public void OnEntityCreated(CEntityInstance entity)
     {
-        switch (@event.ConVarName)
-        {
-            case "invsim_file":
-                HandleFileChanged();
-                return;
-            case "invsim_require_inventory":
-                HandleIsRequireInventoryChanged();
-                return;
-        }
-    }
-
-    public void OnEntityCreated(IOnEntityCreatedEvent @event)
-    {
-        var entity = @event.Entity;
         var designerName = entity.DesignerName;
         if (designerName == "player_spray_decal")
         {
             if (!ConVars.IsSprayChangerEnabled.Value)
                 return;
-            Core.Scheduler.NextWorldUpdate(() =>
+            Server.NextWorldUpdate(() =>
             {
                 var sprayDecal = entity.As<CPlayerSprayDecal>();
                 if (!sprayDecal.IsValid || sprayDecal.AccountID == 0)
                     return;
-                var player = Core.PlayerManager.GetPlayerFromSteamID(sprayDecal.AccountID);
-                if (player == null || player.IsFakeClient || !player.IsValid)
+                var player = Utilities.GetPlayerFromSteamId(sprayDecal.AccountID);
+                if (player == null || player.IsBot)
                     return;
                 HandlePlayerSprayDecalCreated(player, sprayDecal);
             });
         }
     }
 
-    public void OnClientProcessUsercmds(IOnClientProcessUsercmdsEvent @event)
+    public void OnEntityDeleted(CEntityInstance entity)
     {
-        if (!ConVars.IsSprayOnUse.Value)
-            return;
-        var player = Core.PlayerManager.GetPlayer(@event.PlayerId);
-        if (player != null)
-            HandleClientProcessUsercmds(player);
-    }
-
-    public void OnEntityDeleted(IOnEntityDeletedEvent @event)
-    {
-        var entity = @event.Entity;
         var designerName = entity.DesignerName;
         if (designerName == "cs_player_controller")
         {

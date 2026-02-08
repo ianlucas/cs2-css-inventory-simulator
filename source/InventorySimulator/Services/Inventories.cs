@@ -15,11 +15,11 @@ public static class Inventories
     private static readonly Dictionary<ulong, PlayerInventory> _loadedInventories = [];
     private static readonly string _inventoryFileDir = "csgo/addons/swiftlycs2/configs";
 
-    public static bool Load()
+    public static bool Load(string filename)
     {
         try
         {
-            var path = Path.Combine(Server.GameDirectory, _inventoryFileDir, ConVars.File.Value);
+            var path = Path.Combine(Server.GameDirectory, _inventoryFileDir, filename);
             if (!File.Exists(path))
                 return false;
             string json = File.ReadAllText(path);
@@ -32,7 +32,7 @@ public static class Inventories
         }
         catch
         {
-            CSS.Plugin.Logger.LogError("Error when processing \"{File}\".", ConVars.File.Value);
+            CSS.Plugin.Logger.LogError("Error when processing \"{File}\".", filename);
             return false;
         }
     }

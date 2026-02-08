@@ -20,15 +20,17 @@ public partial class InventorySimulator : BasePlugin
         ConVars.Initialize();
         RegisterListener<Listeners.OnEntityCreated>(OnEntityCreated);
         RegisterListener<Listeners.OnEntityDeleted>(OnEntityDeleted);
-        Natives.CCSPlayerController_ProcessUsercmds.Hook(OnClientProcessUsercmds, HookMode.Post);
         RegisterEventHandler<EventPlayerConnect>(OnPlayerConnect, HookMode.Post);
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull, HookMode.Post);
         RegisterEventHandler<EventPlayerDeath>(OnPlayerDeathPre);
         RegisterEventHandler<EventRoundMvp>(OnRoundMvpPre);
-        Natives.CCSPlayer_ItemServices_GiveNamedItem.Hook(OnGiveNamedItem);
-        Natives.CCSPlayerInventory_GetItemInLoadout.Hook(OnGetItemInLoadout);
-        HandleFileChanged();
-        HandleIsRequireInventoryChanged();
+        Natives.CCSPlayerController_ProcessUsercmds.Hook(OnProcessUsercmds, HookMode.Post);
+        Natives.CCSPlayer_ItemServices_GiveNamedItem.Hook(OnGiveNamedItemPre, HookMode.Pre);
+        Natives.CCSPlayerInventory_GetItemInLoadout.Hook(GetItemInLoadout, HookMode.Pre);
+        ConVars.File.ValueChanged += HandleFileChanged;
+        ConVars.IsRequireInventory.ValueChanged += HandleIsRequireInventoryChanged;
+        HandleFileChanged(null, ConVars.File.Value);
+        HandleIsRequireInventoryChanged(null, ConVars.IsRequireInventory.Value);
     }
 
     public override void Unload(bool hotReload)

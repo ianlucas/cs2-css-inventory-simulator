@@ -4,18 +4,15 @@
  *--------------------------------------------------------------------------------------------*/
 
 using System.Runtime.InteropServices;
-using SwiftlyS2.Shared.Natives;
 
 namespace InventorySimulator;
 
 // Thanks to @samyycX.
-public struct CGCClientSharedObjectCache(nint address) : INativeHandle
+public struct CGCClientSharedObjectCache(nint handle)
 {
-    public nint Address { get; set; } = address;
-    public readonly bool IsValid => Address != 0;
+    public nint Handle { get; set; } = handle;
+    public readonly bool IsValid => Handle != 0;
 
     public readonly SOID_t Owner =>
-        !IsValid
-            ? throw new InvalidOperationException("Invalid cache.")
-            : Marshal.PtrToStructure<SOID_t>(Address + Natives.CGCClientSharedObjectCache_m_Owner);
+        !IsValid ? throw new InvalidOperationException("Invalid cache.") : Marshal.PtrToStructure<SOID_t>(Handle + Natives.CGCClientSharedObjectCache_m_Owner);
 }

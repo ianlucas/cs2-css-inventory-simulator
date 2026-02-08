@@ -6,6 +6,7 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using CounterStrikeSharp.API.Core;
+using Timer = CounterStrikeSharp.API.Modules.Timers.Timer;
 
 namespace InventorySimulator;
 
@@ -18,7 +19,7 @@ public class CCSPlayerControllerState(ulong steamId)
     public long WsUpdatedAt = 0;
     public long SprayUsedAt = 0;
     public PlayerInventory? Inventory = Inventories.Get(steamId);
-    public CancellationTokenSource? UseCmdTimer;
+    public Timer? UseCmdTimer;
     public bool IsUseCmdBlocked = false;
     public Action? PostFetchCallback;
 
@@ -35,8 +36,7 @@ public class CCSPlayerControllerState(ulong steamId)
 
     public void DisposeUseCmdTimer()
     {
-        UseCmdTimer?.Cancel();
-        UseCmdTimer?.Dispose();
+        UseCmdTimer?.Kill();
         UseCmdTimer = null;
     }
 
