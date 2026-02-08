@@ -10,5 +10,7 @@ namespace InventorySimulator;
 
 public static partial class Natives
 {
-    public static readonly MemoryFunctionVoid<nint> CServerSideClientBase_ActivatePlayer = new(GameData.GetSignature("CServerSideClientBase::ActivatePlayer"));
+    public static readonly MemoryFunctionVoid<nint> CServerSideClientBase_ActivatePlayer = new(
+        GameData.GetSignature("CServerSideClientBase::ActivatePlayer")
+    );
 }

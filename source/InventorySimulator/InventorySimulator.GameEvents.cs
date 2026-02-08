@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-
 using CounterStrikeSharp.API.Core;
 
 namespace InventorySimulator;
@@ -33,7 +32,8 @@ public partial class InventorySimulator
         if (attacker != null && victim != null)
         {
             var isAttackerValid = !attacker.IsBot && attacker.IsValid;
-            var isVictimValid = (!ConVars.IsStatTrakIgnoreBots.Value || !victim.IsBot) && victim.IsValid;
+            var isVictimValid =
+                (!ConVars.IsStatTrakIgnoreBots.Value || !victim.IsBot) && victim.IsValid;
             if (isAttackerValid && isVictimValid)
                 HandlePlayerWeaponStatTrakIncrement(attacker, @event.Weapon, @event.WeaponItemid);
         }

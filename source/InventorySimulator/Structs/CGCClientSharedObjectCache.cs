@@ -14,5 +14,7 @@ public struct CGCClientSharedObjectCache(nint handle)
     public readonly bool IsValid => Handle != 0;
 
     public readonly SOID_t Owner =>
-        !IsValid ? throw new InvalidOperationException("Invalid cache.") : Marshal.PtrToStructure<SOID_t>(Handle + Natives.CGCClientSharedObjectCache_m_Owner);
+        !IsValid
+            ? throw new InvalidOperationException("Invalid cache.")
+            : Marshal.PtrToStructure<SOID_t>(Handle + Natives.CGCClientSharedObjectCache_m_Owner);
 }

@@ -10,7 +10,12 @@ namespace InventorySimulator;
 
 public static partial class Natives
 {
-    public static readonly MemoryFunctionWithReturn<nint, string, float, int> CAttributeList_SetOrAddAttributeValueByName = new(
+    public static readonly MemoryFunctionWithReturn<
+        nint,
+        string,
+        float,
+        int
+    > CAttributeList_SetOrAddAttributeValueByName = new(
         GameData.GetSignature("CAttributeList::SetOrAddAttributeValueByName")
     );
 }

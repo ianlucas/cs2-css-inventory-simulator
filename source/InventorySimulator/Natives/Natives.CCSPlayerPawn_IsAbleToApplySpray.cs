@@ -10,7 +10,13 @@ namespace InventorySimulator;
 
 public static partial class Natives
 {
-    public static readonly MemoryFunctionWithReturn<nint, nint, nint, nint, nint> CCSPlayerPawn_IsAbleToApplySpray = new(
+    public static readonly MemoryFunctionWithReturn<
+        nint,
+        nint,
+        nint,
+        nint,
+        nint
+    > CCSPlayerPawn_IsAbleToApplySpray = new(
         GameData.GetSignature("CCSPlayerPawn::IsAbleToApplySpray")
     );
 }

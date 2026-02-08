@@ -36,12 +36,19 @@ public class Api
             var response = await _httpClient.PostAsync(url, content);
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                CSS.Plugin.Logger.LogError("POST {Url} failed, check your invsim_apikey's value.", url);
+                CSS.Plugin.Logger.LogError(
+                    "POST {Url} failed, check your invsim_apikey's value.",
+                    url
+                );
                 return null;
             }
             if (!response.IsSuccessStatusCode)
             {
-                CSS.Plugin.Logger.LogError("POST {Url} failed with status code: {StatusCode}", url, response.StatusCode);
+                CSS.Plugin.Logger.LogError(
+                    "POST {Url} failed with status code: {StatusCode}",
+                    url,
+                    response.StatusCode
+                );
                 return null;
             }
             return response;
@@ -65,7 +72,9 @@ public class Api
         if (response == null)
             return null;
         var responseContent = await response.Content.ReadAsStringAsync();
-        return string.IsNullOrEmpty(responseContent) ? null : JsonSerializer.Deserialize<T>(responseContent);
+        return string.IsNullOrEmpty(responseContent)
+            ? null
+            : JsonSerializer.Deserialize<T>(responseContent);
     }
 
     public static async Task<EquippedV4Response?> FetchEquipped(ulong steamId)
@@ -81,7 +90,13 @@ public class Api
             }
             catch (Exception error)
             {
-                CSS.Plugin.Logger.LogError("GET {Url} failed (attempt {Attempt}/{MaxRetries}): {Message}", url, attempt, MaxRetries, error.Message);
+                CSS.Plugin.Logger.LogError(
+                    "GET {Url} failed (attempt {Attempt}/{MaxRetries}): {Message}",
+                    url,
+                    attempt,
+                    MaxRetries,
+                    error.Message
+                );
                 if (attempt == MaxRetries)
                     return null;
                 await Task.Delay(TimeSpan.FromMilliseconds(RetryDelayMs * attempt));

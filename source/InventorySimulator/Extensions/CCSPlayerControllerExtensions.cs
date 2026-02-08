@@ -11,7 +11,10 @@ namespace InventorySimulator;
 
 public static class CCSPlayerControllerExtensions
 {
-    private static readonly ConcurrentDictionary<uint, CCSPlayerControllerState> _controllerStateManager = [];
+    private static readonly ConcurrentDictionary<
+        uint,
+        CCSPlayerControllerState
+    > _controllerStateManager = [];
 
     public static CCSPlayerControllerState GetState(this CCSPlayerController self)
     {
@@ -45,7 +48,11 @@ public static class CCSPlayerControllerExtensions
         return c4.IsPlantingViaUse;
     }
 
-    public static void RegiveAgent(this CCSPlayerController self, PlayerInventory inventory, PlayerInventory? oldInventory)
+    public static void RegiveAgent(
+        this CCSPlayerController self,
+        PlayerInventory inventory,
+        PlayerInventory? oldInventory
+    )
     {
         if (ConVars.MinModels.Value > 0)
             return;
@@ -54,7 +61,8 @@ public static class CCSPlayerControllerExtensions
             return;
         var teamNum = self.TeamNum;
         var item = inventory.Agents.TryGetValue(teamNum, out var a) ? a : null;
-        var oldItem = oldInventory != null && oldInventory.Agents.TryGetValue(teamNum, out a) ? a : null;
+        var oldItem =
+            oldInventory != null && oldInventory.Agents.TryGetValue(teamNum, out a) ? a : null;
         if (oldItem == item)
             return;
         pawn.SetModelFromLoadout();
@@ -62,7 +70,11 @@ public static class CCSPlayerControllerExtensions
         pawn.AcceptInput("SetBodygroup", value: "default_gloves,1");
     }
 
-    public static void RegiveGloves(this CCSPlayerController self, PlayerInventory inventory, PlayerInventory? oldInventory)
+    public static void RegiveGloves(
+        this CCSPlayerController self,
+        PlayerInventory inventory,
+        PlayerInventory? oldInventory
+    )
     {
         var pawn = self.PlayerPawn.Value;
         var itemServices = pawn?.ItemServices?.As<CCSPlayer_ItemServices>();
@@ -92,7 +104,11 @@ public static class CCSPlayerControllerExtensions
         });
     }
 
-    public static void RegiveWeapons(this CCSPlayerController self, PlayerInventory inventory, PlayerInventory? oldInventory)
+    public static void RegiveWeapons(
+        this CCSPlayerController self,
+        PlayerInventory inventory,
+        PlayerInventory? oldInventory
+    )
     {
         var pawn = self.PlayerPawn.Value;
         var weaponServices = pawn?.WeaponServices?.As<CCSPlayer_WeaponServices>();
@@ -108,7 +124,13 @@ public static class CCSPlayerControllerExtensions
             if (weapon.OriginalOwnerXuidLow != (uint)self.SteamID)
                 continue;
             var data = weapon.VData?.As<CCSWeaponBaseVData>();
-            if (data != null && data.GearSlot is gear_slot_t.GEAR_SLOT_RIFLE or gear_slot_t.GEAR_SLOT_PISTOL or gear_slot_t.GEAR_SLOT_KNIFE)
+            if (
+                data != null
+                && data.GearSlot
+                    is gear_slot_t.GEAR_SLOT_RIFLE
+                        or gear_slot_t.GEAR_SLOT_PISTOL
+                        or gear_slot_t.GEAR_SLOT_KNIFE
+            )
             {
                 var entityDef = weapon.AttributeManager.Item.ItemDefinitionIndex;
                 var isFallbackTeam = ConVars.IsFallbackTeam.Value;
@@ -124,7 +146,16 @@ public static class CCSPlayerControllerExtensions
                     continue;
                 var clip = weapon.Clip1;
                 var reserve = weapon.ReserveAmmo[0];
-                targets.Add((weapon.DesignerName, weapon.GetDesignerName(), clip, reserve, activeDesignerName == weapon.DesignerName, data.GearSlot));
+                targets.Add(
+                    (
+                        weapon.DesignerName,
+                        weapon.GetDesignerName(),
+                        clip,
+                        reserve,
+                        activeDesignerName == weapon.DesignerName,
+                        data.GearSlot
+                    )
+                );
             }
         }
         foreach (var target in targets)
@@ -135,7 +166,9 @@ public static class CCSPlayerControllerExtensions
             var reserve = target.Item4;
             var active = target.Item5;
             var gearSlot = target.Item6;
-            var oldWeapon = weaponServices.MyWeapons.FirstOrDefault(h => h.Value?.DesignerName == designerName)?.Value;
+            var oldWeapon = weaponServices
+                .MyWeapons.FirstOrDefault(h => h.Value?.DesignerName == designerName)
+                ?.Value;
             if (oldWeapon != null)
             {
                 weaponServices.DropWeapon(oldWeapon);
@@ -152,7 +185,11 @@ public static class CCSPlayerControllerExtensions
                             weapon.Clip1 = clip;
                             Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
                             weapon.ReserveAmmo[0] = reserve;
-                            Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_pReserveAmmo");
+                            Utilities.SetStateChanged(
+                                weapon,
+                                "CBasePlayerWeapon",
+                                "m_pReserveAmmo"
+                            );
                             Server.NextWorldUpdate(() =>
                             {
                                 if (active && self.IsValid)

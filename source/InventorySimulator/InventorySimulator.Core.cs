@@ -24,7 +24,10 @@ public partial class InventorySimulator
     // Inventory Fetch & Load Operations
     // ========================================================================
 
-    public static async Task HandlePlayerInventoryFetch(CCSPlayerController player, bool force = false)
+    public static async Task HandlePlayerInventoryFetch(
+        CCSPlayerController player,
+        bool force = false
+    )
     {
         var controllerState = player.GetState();
         var existing = controllerState.Inventory;
@@ -79,7 +82,10 @@ public partial class InventorySimulator
             inventory.SendInventoryUpdateEvent();
     }
 
-    public static void HandlePostPlayerInventoryRefresh(CCSPlayerController player, PlayerInventory? oldInventory)
+    public static void HandlePostPlayerInventoryRefresh(
+        CCSPlayerController player,
+        PlayerInventory? oldInventory
+    )
     {
         var inventory = player.GetState().Inventory;
         if (inventory != null && ConVars.IsWsImmediately.Value)
@@ -94,13 +100,18 @@ public partial class InventorySimulator
     // Runtime: StatTrak Operations
     // ========================================================================
 
-    public void HandlePlayerWeaponStatTrakIncrement(CCSPlayerController player, string designerName, string weaponItemId)
+    public void HandlePlayerWeaponStatTrakIncrement(
+        CCSPlayerController player,
+        string designerName,
+        string weaponItemId
+    )
     {
         var weapon = player.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Value;
         if (
             weapon == null
             || !weapon.HasCustomItemID()
-            || weapon.AttributeManager.Item.AccountID != new CSteamID(player.SteamID).GetAccountID().m_AccountID
+            || weapon.AttributeManager.Item.AccountID
+                != new CSteamID(player.SteamID).GetAccountID().m_AccountID
             || weapon.AttributeManager.Item.ItemID != ulong.Parse(weaponItemId)
         )
             return;
@@ -108,16 +119,26 @@ public partial class InventorySimulator
         var isFallbackTeam = ConVars.IsFallbackTeam.Value;
         var item = ItemHelper.IsMeleeDesignerName(designerName)
             ? inventory?.GetKnife(player.TeamNum, isFallbackTeam)
-            : inventory?.GetWeapon(player.TeamNum, weapon.AttributeManager.Item.ItemDefinitionIndex, isFallbackTeam);
+            : inventory?.GetWeapon(
+                player.TeamNum,
+                weapon.AttributeManager.Item.ItemDefinitionIndex,
+                isFallbackTeam
+            );
         if (item == null || item.Stattrak == null || item.Uid == null)
             return;
         item.Stattrak += 1;
         var statTrak = TypeHelper.ViewAs<int, float>(item.Stattrak.Value);
-        weapon.AttributeManager.Item.NetworkedDynamicAttributes.SetOrAddAttribute("kill eater", statTrak);
+        weapon.AttributeManager.Item.NetworkedDynamicAttributes.SetOrAddAttribute(
+            "kill eater",
+            statTrak
+        );
         HandleStatTrakIncrement(player.SteamID, item.Uid.Value);
     }
 
-    public static void HandlePlayerMusicKitStatTrakIncrement(EventRoundMvp @event, CCSPlayerController player)
+    public static void HandlePlayerMusicKitStatTrakIncrement(
+        EventRoundMvp @event,
+        CCSPlayerController player
+    )
     {
         var item = player.GetState().Inventory?.MusicKit;
         if (item != null && item.Uid != null && item.Stattrak != null && item.Stattrak >= 0)
@@ -140,7 +161,10 @@ public partial class InventorySimulator
 
     public void HandleClientProcessUsercmds(CCSPlayerController player)
     {
-        if ((player.Buttons & PlayerButtons.Use) != 0 && player.PlayerPawn.Value?.IsAbleToApplySpray() == true)
+        if (
+            (player.Buttons & PlayerButtons.Use) != 0
+            && player.PlayerPawn.Value?.IsAbleToApplySpray() == true
+        )
         {
             var controllerState = player.GetState();
             if (player.IsUseCmdBusy())
@@ -194,7 +218,10 @@ public partial class InventorySimulator
         }
     }
 
-    public static void HandlePlayerSprayDecalCreated(CCSPlayerController player, CPlayerSprayDecal sprayDecal)
+    public static void HandlePlayerSprayDecalCreated(
+        CCSPlayerController player,
+        CPlayerSprayDecal sprayDecal
+    )
     {
         var item = player.GetState().Inventory?.Graffiti;
         if (item != null && item.Def != null && item.Tint != null)
@@ -225,7 +252,12 @@ public partial class InventorySimulator
                 player?.PrintToChat(Localizer["invsim.login_failed"]);
                 return;
             }
-            player?.PrintToChat(Localizer["invsim.login", $"{Api.GetUrl("/api/sign-in/callback")}?token={response.Token}"]);
+            player?.PrintToChat(
+                Localizer[
+                    "invsim.login",
+                    $"{Api.GetUrl("/api/sign-in/callback")}?token={response.Token}"
+                ]
+            );
         });
     }
 

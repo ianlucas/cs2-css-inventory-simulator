@@ -10,7 +10,10 @@ namespace InventorySimulator;
 
 public static partial class Natives
 {
-    public static readonly MemoryFunctionWithReturn<nint, nint> CCSPlayerInventory_SendInventoryUpdateEvent = new(
+    public static readonly MemoryFunctionWithReturn<
+        nint,
+        nint
+    > CCSPlayerInventory_SendInventoryUpdateEvent = new(
         GameData.GetSignature("CCSPlayerInventory::SendInventoryUpdateEvent")
     );
 }

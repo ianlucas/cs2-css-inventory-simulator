@@ -12,7 +12,12 @@ public static class CEconItemViewExtensions
     public static readonly ulong MinimumCustomItemID = 65155030971;
     private static ulong NextItemId = MinimumCustomItemID;
 
-    public static void ApplyAttributes(this CEconItemView self, InventoryItem item, loadout_slot_t? slot, ulong? steamId)
+    public static void ApplyAttributes(
+        this CEconItemView self,
+        InventoryItem item,
+        loadout_slot_t? slot,
+        ulong? steamId
+    )
     {
         var isMelee = slot == loadout_slot_t.LOADOUT_SLOT_MELEE;
         self.Initialized = true;

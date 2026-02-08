@@ -10,5 +10,7 @@ namespace InventorySimulator;
 public static class TeamHelper
 {
     public static byte ToggleTeam(byte team) =>
-        team > (byte)CsTeam.Spectator ? (byte)((CsTeam)team == CsTeam.Terrorist ? CsTeam.CounterTerrorist : CsTeam.Terrorist) : team;
+        team > (byte)CsTeam.Spectator
+            ? (byte)((CsTeam)team == CsTeam.Terrorist ? CsTeam.CounterTerrorist : CsTeam.Terrorist)
+            : team;
 }

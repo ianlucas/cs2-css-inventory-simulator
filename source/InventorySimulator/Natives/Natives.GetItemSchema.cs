@@ -10,5 +10,7 @@ namespace InventorySimulator;
 
 public static partial class Natives
 {
-    public static readonly MemoryFunctionWithReturn<nint> GetItemSchema = new(GameData.GetSignature("GetItemSchema"));
+    public static readonly MemoryFunctionWithReturn<nint> GetItemSchema = new(
+        GameData.GetSignature("GetItemSchema")
+    );
 }

@@ -57,9 +57,21 @@ public partial class InventorySimulator
             if (itemDef != null)
             {
                 var controllerState = controller.GetState();
-                var item = controllerState.Inventory?.GetItemForSlot(controller.TeamNum, itemDef.DefaultLoadoutSlot, itemDef.DefIndex, ConVars.IsFallbackTeam.Value);
+                var item = controllerState.Inventory?.GetItemForSlot(
+                    controller.TeamNum,
+                    itemDef.DefaultLoadoutSlot,
+                    itemDef.DefIndex,
+                    ConVars.IsFallbackTeam.Value
+                );
                 if (item != null)
-                    hook.SetParam(3, controllerState.GetEconItemView(controller.TeamNum, (int)itemDef.DefaultLoadoutSlot, item));
+                    hook.SetParam(
+                        3,
+                        controllerState.GetEconItemView(
+                            controller.TeamNum,
+                            (int)itemDef.DefaultLoadoutSlot,
+                            item
+                        )
+                    );
             }
         }
         return HookResult.Continue;

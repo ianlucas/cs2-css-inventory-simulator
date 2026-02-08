@@ -23,7 +23,10 @@ public class CCSPlayerControllerState(ulong steamId)
     public bool IsUseCmdBlocked = false;
     public Action? PostFetchCallback;
 
-    private static readonly ConcurrentDictionary<(ulong SteamID, int Team, int Slot), nint> _econItemViewManager = [];
+    private static readonly ConcurrentDictionary<
+        (ulong SteamID, int Team, int Slot),
+        nint
+    > _econItemViewManager = [];
 
     public void TriggerPostFetch()
     {

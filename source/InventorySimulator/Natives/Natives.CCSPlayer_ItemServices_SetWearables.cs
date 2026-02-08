@@ -10,5 +10,7 @@ namespace InventorySimulator;
 
 public static partial class Natives
 {
-    public static readonly MemoryFunctionVoid<nint> CCSPlayer_ItemServices_SetWearables = new(GameData.GetSignature("CCSPlayer_ItemServices::SetWearables"));
+    public static readonly MemoryFunctionVoid<nint> CCSPlayer_ItemServices_SetWearables = new(
+        GameData.GetSignature("CCSPlayer_ItemServices::SetWearables")
+    );
 }

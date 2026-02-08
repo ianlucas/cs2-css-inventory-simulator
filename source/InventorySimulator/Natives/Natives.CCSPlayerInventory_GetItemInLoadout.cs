@@ -10,7 +10,12 @@ namespace InventorySimulator;
 
 public static partial class Natives
 {
-    public static readonly MemoryFunctionWithReturn<nint, int, int, nint> CCSPlayerInventory_GetItemInLoadout = new(
+    public static readonly MemoryFunctionWithReturn<
+        nint,
+        int,
+        int,
+        nint
+    > CCSPlayerInventory_GetItemInLoadout = new(
         GameData.GetSignature("CCSPlayerInventory::GetItemInLoadout")
     );
 }

@@ -14,6 +14,9 @@ public static partial class Natives
 {
     public static void CCSPlayer_WeaponServices_DropWeapon(nint thisPtr, nint weaponPtr)
     {
-        VirtualFunction.CreateVoid<nint, nint, Vector?, Vector?>(thisPtr, GameData.GetOffset("CCSPlayer_WeaponServices::DropWeapon"))(thisPtr, weaponPtr, null, null);
+        VirtualFunction.CreateVoid<nint, nint, Vector?, Vector?>(
+            thisPtr,
+            GameData.GetOffset("CCSPlayer_WeaponServices::DropWeapon")
+        )(thisPtr, weaponPtr, null, null);
     }
 }

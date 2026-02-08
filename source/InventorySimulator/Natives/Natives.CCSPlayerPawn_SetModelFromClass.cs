@@ -10,5 +10,7 @@ namespace InventorySimulator;
 
 public static partial class Natives
 {
-    public static readonly MemoryFunctionVoid<nint> CCSPlayerPawn_SetModelFromClass = new(GameData.GetSignature("CCSPlayerPawn::SetModelFromClass"));
+    public static readonly MemoryFunctionVoid<nint> CCSPlayerPawn_SetModelFromClass = new(
+        GameData.GetSignature("CCSPlayerPawn::SetModelFromClass")
+    );
 }

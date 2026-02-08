@@ -11,7 +11,11 @@ public static class CBasePlayerWeaponExtensions
 {
     public static string GetDesignerName(this CBasePlayerWeapon self)
     {
-        var designerName = SchemaHelper.GetItemSchema()?.GetItemDefinition(self.AttributeManager.Item.ItemDefinitionIndex)?.DefinitionName ?? self.DesignerName;
+        var designerName =
+            SchemaHelper
+                .GetItemSchema()
+                ?.GetItemDefinition(self.AttributeManager.Item.ItemDefinitionIndex)
+                ?.DefinitionName ?? self.DesignerName;
         return ItemHelper.IsMeleeDesignerName(designerName) ? "weapon_knife" : designerName;
     }
 
