@@ -19,11 +19,7 @@ public static partial class UrlHelper
                 format,
                 match =>
                 {
-                    var prop = uri.GetType()
-                        .GetProperty(
-                            match.Groups[1].Value,
-                            BindingFlags.Public | BindingFlags.Instance
-                        );
+                    var prop = uri.GetType().GetProperty(match.Groups[1].Value, BindingFlags.Public | BindingFlags.Instance);
                     return prop?.GetValue(uri)?.ToString() ?? match.Value;
                 }
             );
