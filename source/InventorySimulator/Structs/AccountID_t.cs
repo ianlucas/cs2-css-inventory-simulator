@@ -3,14 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
-
 namespace InventorySimulator;
 
-public static partial class Natives
+public class AccountID_t(uint value)
 {
-    public static readonly MemoryFunctionWithReturn<nint, nint, int, bool, float> CCSPlayerController_ProcessUsercmds = new(
-        GameData.GetSignature("CCSPlayerController::ProcessUsercmds")
-    );
+    public uint m_AccountID = value;
 }

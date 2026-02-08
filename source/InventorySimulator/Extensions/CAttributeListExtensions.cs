@@ -3,14 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-using SwiftlyS2.Shared.Players;
+using CounterStrikeSharp.API.Core;
 
 namespace InventorySimulator;
 
-public static class IPlayerManagerServiceExtensions
+public static class CAttributeListExtensions
 {
-    public static IPlayer? GetPlayerFromSteamID(this IPlayerManagerService self, ulong steamID)
+    public static void SetOrAddAttribute(this CAttributeList self, string name, float value)
     {
-        return self.GetAllPlayers().FirstOrDefault(p => p.SteamID == steamID);
+        Natives.CAttributeList_SetOrAddAttributeValueByName.Invoke(self.Handle, name, value);
     }
 }

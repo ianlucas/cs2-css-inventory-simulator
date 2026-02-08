@@ -3,14 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
-
 namespace InventorySimulator;
 
-public static partial class Natives
+public class CSteamID(ulong ulSteamID)
 {
-    public static readonly MemoryFunctionWithReturn<nint, nint, int, bool, float> CCSPlayerController_ProcessUsercmds = new(
-        GameData.GetSignature("CCSPlayerController::ProcessUsercmds")
-    );
+    public ulong m_SteamID = ulSteamID;
+
+    public AccountID_t GetAccountID()
+    {
+        return new AccountID_t((uint)(m_SteamID & 0xFFFFFFFFul));
+    }
 }

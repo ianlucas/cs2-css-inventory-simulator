@@ -4,13 +4,13 @@
  *--------------------------------------------------------------------------------------------*/
 
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 
 namespace InventorySimulator;
 
-public static partial class Natives
+public static class CCSPlayer_WeaponServicesExtensions
 {
-    public static readonly MemoryFunctionWithReturn<nint, nint, int, bool, float> CCSPlayerController_ProcessUsercmds = new(
-        GameData.GetSignature("CCSPlayerController::ProcessUsercmds")
-    );
+    public static void DropWeapon(this CCSPlayer_WeaponServices self, CBasePlayerWeapon weapon)
+    {
+        Natives.CCSPlayer_WeaponServices_DropWeapon(self.Handle, weapon.Handle);
+    }
 }
