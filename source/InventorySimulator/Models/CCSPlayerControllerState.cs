@@ -51,8 +51,8 @@ public class CCSPlayerControllerState(ulong steamId)
         }
         var itemView = SchemaHelper.CreateCEconItemView(copyFrom);
         itemView.ApplyAttributes(item, (loadout_slot_t)slot, SteamID);
-        _econItemViewManager[key] = itemView.Address;
-        return itemView.Address;
+        _econItemViewManager[key] = itemView.Handle;
+        return itemView.Handle;
     }
 
     public void ClearEconItemView()

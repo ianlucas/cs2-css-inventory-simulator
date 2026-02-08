@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-using SwiftlyS2.Shared.Players;
-using SwiftlyS2.Shared.SchemaDefinitions;
+using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Utils;
 
 namespace InventorySimulator;
 
@@ -40,7 +40,7 @@ public class PlayerInventory(EquippedV4Response data)
 
     public Dictionary<ushort, InventoryItem> GetWeapons(byte team)
     {
-        return (Team)team == Team.T ? _data.TWeapons : _data.CTWeapons;
+        return (CsTeam)team == CsTeam.Terrorist ? _data.TWeapons : _data.CTWeapons;
     }
 
     public InventoryItem? GetWeapon(byte team, ushort def, bool fallback)
@@ -74,38 +74,22 @@ public class PlayerInventory(EquippedV4Response data)
         var paint = item.Paint.Value;
         var wear = item.Wear.Value;
         var stickers = string.Join("_", item.Stickers.Select(s => s.Def));
-        while (
-            WeaponWearCache.TryGetValue((paint, wear), out var cached)
-            && (cached.def != def || cached.stickers != stickers)
-        )
+        while (WeaponWearCache.TryGetValue((paint, wear), out var cached) && (cached.def != def || cached.stickers != stickers))
             wear += 0.001f;
         WeaponWearCache[(paint, wear)] = (def, stickers);
         return wear;
     }
 
-    public InventoryItem? GetItemForSlot(
-        byte team,
-        loadout_slot_t slot,
-        ushort def,
-        bool fallback,
-        int minModels = 0
-    )
+    public InventoryItem? GetItemForSlot(byte team, loadout_slot_t slot, ushort def, bool fallback, int minModels = 0)
     {
-        if (
-            slot >= loadout_slot_t.LOADOUT_SLOT_MELEE
-            && slot <= loadout_slot_t.LOADOUT_SLOT_EQUIPMENT5
-        )
+        if (slot >= loadout_slot_t.LOADOUT_SLOT_MELEE && slot <= loadout_slot_t.LOADOUT_SLOT_EQUIPMENT5)
         {
-            return slot == loadout_slot_t.LOADOUT_SLOT_MELEE
-                ? GetKnife(team, fallback)
-                : GetWeapon(team, def, fallback);
+            return slot == loadout_slot_t.LOADOUT_SLOT_MELEE ? GetKnife(team, fallback) : GetWeapon(team, def, fallback);
         }
         if (slot == loadout_slot_t.LOADOUT_SLOT_CLOTHING_CUSTOMPLAYER)
         {
             if (minModels > 0)
-                return team == (byte)Team.T
-                    ? new InventoryItem { Def = 5036 }
-                    : new InventoryItem { Def = 5037 };
+                return team == (byte)CsTeam.Terrorist ? new InventoryItem { Def = 5036 } : new InventoryItem { Def = 5037 };
             if (_data.Agents.TryGetValue(team, out var item))
                 return item;
             return null;
