@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Cvars;
 
 namespace InventorySimulator;
@@ -105,23 +106,8 @@ public static class ConVars
         0
     );
 
-    public static void Initialize()
+    public static void Initialize(BasePlugin plugin)
     {
-        _ = Url;
-        _ = ApiKey;
-        _ = File;
-        _ = IsWsEnabled;
-        _ = IsWsImmediately;
-        _ = WsCooldown;
-        _ = WsUrlPrintFormat;
-        _ = IsWsLogin;
-        _ = IsRequireInventory;
-        _ = IsSprayEnabled;
-        _ = IsSprayOnUse;
-        _ = SprayCooldown;
-        _ = IsSprayChangerEnabled;
-        _ = IsStatTrakIgnoreBots;
-        _ = IsFallbackTeam;
-        _ = MinModels;
+        plugin.RegisterFakeConVars(typeof(ConVars));
     }
 }

@@ -82,7 +82,10 @@ public partial class InventorySimulator
         var inventory = new CCSPlayerInventory(hook.GetParam<nint>(0));
         if (!inventory.IsValid)
             return HookResult.Continue;
-        var itemView = hook.GetReturn<CEconItemView>();
+        var ret = hook.GetReturn<nint>();
+        if (ret == nint.Zero)
+            return HookResult.Continue;
+        var itemView = new CEconItemView(ret);
         var player = Utilities.GetPlayerFromSteamId(inventory.SOCache.Owner.SteamID);
         if (player == null)
             return HookResult.Continue;
@@ -97,8 +100,10 @@ public partial class InventorySimulator
             ConVars.MinModels.Value
         );
         if (item != null)
+        {
             hook.SetReturn(controllerState.GetEconItemView(team, slot, item, itemView.Handle));
+            return HookResult.Changed;
+        }
         return HookResult.Continue;
-        ;
     }
 }

@@ -18,7 +18,7 @@ public partial class InventorySimulator : BasePlugin
     public override void Load(bool hotReload)
     {
         CSS.Initialize(this);
-        ConVars.Initialize();
+        ConVars.Initialize(this);
         RegisterListener<Listeners.OnEntityCreated>(OnEntityCreated);
         RegisterListener<Listeners.OnEntityDeleted>(OnEntityDeleted);
         RegisterEventHandler<EventPlayerConnect>(OnPlayerConnect, HookMode.Post);
@@ -27,7 +27,7 @@ public partial class InventorySimulator : BasePlugin
         RegisterEventHandler<EventRoundMvp>(OnRoundMvpPre);
         Natives.CCSPlayerController_ProcessUsercmds.Hook(OnProcessUsercmds, HookMode.Post);
         VirtualFunctions.GiveNamedItemFunc.Hook(OnGiveNamedItemPre, HookMode.Pre);
-        Natives.CCSPlayerInventory_GetItemInLoadout.Hook(GetItemInLoadout, HookMode.Pre);
+        Natives.CCSPlayerInventory_GetItemInLoadout.Hook(GetItemInLoadout, HookMode.Post);
         ConVars.File.ValueChanged += HandleFileChanged;
         ConVars.IsRequireInventory.ValueChanged += HandleIsRequireInventoryChanged;
         HandleFileChanged(null, ConVars.File.Value);

@@ -3,9 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-using System.Buffers;
-using System.Text;
-
 namespace InventorySimulator;
 
 public class CEconItemSchema(nint handle)
