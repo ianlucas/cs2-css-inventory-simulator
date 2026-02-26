@@ -26,7 +26,7 @@ env:
   project_name: InventorySimulator
 
 jobs:
-  build:
+  ci:
     permissions:
       contents: write
     runs-on: ubuntu-latest
