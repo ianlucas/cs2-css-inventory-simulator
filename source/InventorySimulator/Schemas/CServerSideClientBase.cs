@@ -7,14 +7,10 @@ using System.Runtime.InteropServices;
 
 namespace InventorySimulator;
 
-// Thanks to @samyycX.
-public struct CGCClientSharedObjectCache(nint handle)
+public class CServerSideClientBase(nint handle)
 {
     public nint Handle { get; set; } = handle;
-    public readonly bool IsValid => Handle != nint.Zero;
-
-    public readonly SOID_t Owner =>
-        !IsValid
-            ? throw new InvalidOperationException("Invalid cache.")
-            : Marshal.PtrToStructure<SOID_t>(Handle + Natives.CGCClientSharedObjectCache_m_Owner);
+    public bool IsValid => Handle != nint.Zero;
+    public ushort UserID =>
+        (ushort)Marshal.ReadInt16(Handle + Natives.CServerSideClientBase_m_UserID);
 }

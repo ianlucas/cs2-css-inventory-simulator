@@ -8,7 +8,7 @@ namespace InventorySimulator;
 public class CEconItemSchema(nint handle)
 {
     public nint Handle { get; set; } = handle;
-    public bool IsValid => Handle != 0;
+    public bool IsValid => Handle != nint.Zero;
 
     public CEconItemDefinition? GetItemDefinitionByName(string pchName)
     {

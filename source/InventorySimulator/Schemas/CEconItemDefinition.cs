@@ -12,7 +12,7 @@ namespace InventorySimulator;
 public class CEconItemDefinition(nint handle)
 {
     public nint Handle { get; set; } = handle;
-    public bool IsValid => Handle != 0;
+    public bool IsValid => Handle != nint.Zero;
 
     public ushort DefIndex => (ushort)Marshal.ReadInt16(Handle + 0x10);
 
@@ -21,7 +21,7 @@ public class CEconItemDefinition(nint handle)
         get
         {
             var ptr = Marshal.ReadIntPtr(Handle + 0x260);
-            return ptr != 0 ? Marshal.PtrToStringUTF8(ptr) : null;
+            return ptr != nint.Zero ? Marshal.PtrToStringUTF8(ptr) : null;
         }
     }
 

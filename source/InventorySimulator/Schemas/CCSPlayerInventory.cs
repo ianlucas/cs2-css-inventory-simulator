@@ -12,7 +12,7 @@ namespace InventorySimulator;
 public class CCSPlayerInventory(nint handle)
 {
     public nint Handle { get; set; } = handle;
-    public bool IsValid => Handle != 0 && SOCache.IsValid;
+    public bool IsValid => Handle != nint.Zero && SOCache.IsValid;
     public ulong SteamID => SOCache.Owner.SteamID;
 
     public CGCClientSharedObjectCache SOCache =>

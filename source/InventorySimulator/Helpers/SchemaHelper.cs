@@ -17,7 +17,7 @@ public static class SchemaHelper
     {
         var ptr = Marshal.AllocHGlobal(Schema.GetClassSize("CEconItemView"));
         Natives.CEconItemView_Constructor.Invoke(ptr);
-        if (copyFrom != 0)
+        if (copyFrom != nint.Zero)
             Natives.CEconItemView_OperatorEquals.Invoke(ptr, copyFrom);
         return new CEconItemView(ptr);
     }

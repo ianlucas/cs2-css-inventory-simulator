@@ -15,7 +15,7 @@ public partial class InventorySimulator
     public HookResult OnActivatePlayerPre(DynamicHook hook)
     {
         var thisPtr = hook.GetParam<nint>(0);
-        var userid = (ushort)Marshal.ReadInt16(thisPtr + Natives.CServerSideClientBase_m_UserID);
+        var userid = new CServerSideClientBase(thisPtr).UserID;
         var player = Utilities.GetPlayerFromUserid(userid);
         if (player != null && !player.IsBot)
         {
