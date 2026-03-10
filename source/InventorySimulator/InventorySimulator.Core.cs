@@ -110,9 +110,10 @@ public partial class InventorySimulator
         if (
             weapon == null
             || !weapon.HasCustomItemID()
+            || !ulong.TryParse(weaponItemId, out var parsedItemId)
             || weapon.AttributeManager.Item.AccountID
                 != new CSteamID(player.SteamID).GetAccountID().m_AccountID
-            || weapon.AttributeManager.Item.ItemID != ulong.Parse(weaponItemId)
+            || weapon.AttributeManager.Item.ItemID != parsedItemId
         )
             return;
         var inventory = player.GetState().Inventory;
