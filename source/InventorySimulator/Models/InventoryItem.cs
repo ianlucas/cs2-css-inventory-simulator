@@ -15,6 +15,9 @@ public class InventoryItem
     [JsonPropertyName("hash")]
     public string? Hash { get; set; }
 
+    [JsonPropertyName("keychains")]
+    public List<KeychainItem>? Keychains { get; set; }
+
     [JsonPropertyName("musicId")]
     public int? MusicId { get; set; }
 
@@ -96,6 +99,11 @@ public class InventoryItem
                 var slot = $"sticker slot {sticker.Slot}";
                 var id = TypeHelper.ViewAs<uint, float>(sticker.Def);
                 attributes.Add(($"{slot} id", id));
+                if (sticker.Schema != null)
+                {
+                    var schema = TypeHelper.ViewAs<uint, float>(sticker.Schema.Value);
+                    attributes.Add(($"{slot} schema", schema));
+                }
                 if (sticker.Wear != null)
                     attributes.Add(($"{slot} wear", sticker.Wear.Value));
                 if (sticker.Rotation != null)
@@ -104,6 +112,21 @@ public class InventoryItem
                     attributes.Add(($"{slot} offset x", sticker.X.Value));
                 if (sticker.Y != null)
                     attributes.Add(($"{slot} offset y", sticker.Y.Value));
+            }
+        if (Keychains != null)
+            foreach (var keychain in Keychains)
+            {
+                var slot = $"keychain slot {keychain.Slot}";
+                var id = TypeHelper.ViewAs<uint, float>(keychain.Def);
+                attributes.Add(($"{slot} id", id));
+                var seed = TypeHelper.ViewAs<int, float>(keychain.Seed);
+                attributes.Add(($"{slot} seed", seed));
+                if (keychain.X != null)
+                    attributes.Add(($"{slot} offset x", keychain.X.Value));
+                if (keychain.Y != null)
+                    attributes.Add(($"{slot} offset y", keychain.Y.Value));
+                if (keychain.Z != null)
+                    attributes.Add(($"{slot} offset z", keychain.Z.Value));
             }
         if (MusicId != null)
         {
