@@ -121,6 +121,11 @@ public class InventoryItem
                 attributes.Add(($"{slot} id", id));
                 var seed = TypeHelper.ViewAs<int, float>(keychain.Seed);
                 attributes.Add(($"{slot} seed", seed));
+                if (keychain.Sticker != null)
+                {
+                    var sticker = TypeHelper.ViewAs<uint, float>(keychain.Sticker.Value);
+                    attributes.Add(($"{slot} sticker", sticker));
+                }
                 if (keychain.X != null)
                     attributes.Add(($"{slot} offset x", keychain.X.Value));
                 if (keychain.Y != null)

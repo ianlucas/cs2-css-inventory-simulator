@@ -18,6 +18,9 @@ public class KeychainItem
     [JsonPropertyName("slot")]
     public uint Slot { get; set; }
 
+    [JsonPropertyName("sticker")]
+    public uint? Sticker { get; set; }
+
     [JsonPropertyName("x")]
     public float? X { get; set; }
 
