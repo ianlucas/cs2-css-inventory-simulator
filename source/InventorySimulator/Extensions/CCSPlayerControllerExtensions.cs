@@ -210,4 +210,10 @@ public static class CCSPlayerControllerExtensions
                 );
         }
     }
+
+    public static void HandleDisconnect(this CCSPlayerController self)
+    {
+        if (!ConVars.IsPersistInventory.Value && !Inventories.Has(self.SteamID))
+            self.GetState().Inventory = null;
+    }
 }

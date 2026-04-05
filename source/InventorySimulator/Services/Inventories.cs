@@ -45,6 +45,11 @@ public static class Inventories
         }
     }
 
+    public static bool Has(ulong steamId)
+    {
+        return _loadedInventories.ContainsKey(steamId);
+    }
+
     public static bool TryGet(ulong steamId, [MaybeNullWhen(false)] out PlayerInventory inventory)
     {
         if (_loadedInventories.TryGetValue(steamId, out var value))

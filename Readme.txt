@@ -22,6 +22,9 @@ invsim_ws_url_print_format "{Host}"
 invsim_wslogin false
     Allow players to authenticate with Inventory Simulator and display their login URL (not recommended).
 
+invsim_persist_inventory false
+    Keep a player's cached inventory after they disconnect.
+
 invsim_require_inventory false
     Require the player's inventory to be fetched before allowing them to join the game.
 

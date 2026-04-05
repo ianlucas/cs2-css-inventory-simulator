@@ -58,6 +58,12 @@ public static class ConVars
         false
     );
 
+    public static readonly FakeConVar<bool> IsPersistInventory = new(
+        "invsim_persist_inventory",
+        "Keep a player's cached inventory after they disconnect.",
+        false
+    );
+
     public static readonly FakeConVar<bool> IsRequireInventory = new(
         "invsim_require_inventory",
         "Require the player's inventory to be fetched before allowing them to join the game.",
