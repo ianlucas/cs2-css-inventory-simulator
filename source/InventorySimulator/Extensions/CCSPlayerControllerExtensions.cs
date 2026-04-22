@@ -86,21 +86,13 @@ public static class CCSPlayerControllerExtensions
         var oldItem = oldInventory?.GetGloves(teamNum, isFallbackTeam);
         if (oldItem == item)
             return;
-        // Workaround by @daffyyyy.
-        var model = pawn.CBodyComponent?.SceneNode?.GetSkeletonInstance()?.ModelState.ModelName;
-        if (!string.IsNullOrEmpty(model))
-        {
-            pawn.SetModel("characters/models/tm_jumpsuit/tm_jumpsuit_varianta.vmdl");
-            pawn.SetModel(model);
-        }
+        itemServices.UpdateWearables();
+        // Thanks to @samyycX.
+        pawn.AcceptInput("SetBodygroup", value: "first_or_third_person,0");
         Server.NextWorldUpdate(() =>
         {
             if (pawn.IsValid && itemServices.Handle != nint.Zero)
-            {
-                itemServices.UpdateWearables();
-                if (item != null)
-                    pawn.AcceptInput("SetBodygroup", value: "default_gloves,1");
-            }
+                pawn.AcceptInput("SetBodygroup", value: "first_or_third_person,1");
         });
     }
 
