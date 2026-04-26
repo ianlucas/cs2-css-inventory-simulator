@@ -28,7 +28,7 @@ public class Api
         return ConVars.ApiKey.Value != "";
     }
 
-    private static async Task<HttpResponseMessage?> SendPostRequest(string url, object request)
+    private static async Task<HttpResponseMessage?> SendPostAsync(string url, object request)
     {
         try
         {
@@ -62,13 +62,13 @@ public class Api
 
     private static async Task PostAsync(string url, object request)
     {
-        await SendPostRequest(url, request);
+        await SendPostAsync(url, request);
     }
 
     private static async Task<T?> PostAsync<T>(string url, object request)
         where T : class
     {
-        var response = await SendPostRequest(url, request);
+        var response = await SendPostAsync(url, request);
         if (response == null)
             return null;
         var responseContent = await response.Content.ReadAsStringAsync();
@@ -77,7 +77,7 @@ public class Api
             : JsonSerializer.Deserialize<T>(responseContent);
     }
 
-    public static async Task<EquippedV4Response?> FetchEquipped(ulong steamId)
+    public static async Task<EquippedV4Response?> FetchEquippedAsync(ulong steamId)
     {
         var url = GetUrl($"/api/equipped/v4/{steamId}.json");
         for (var attempt = 1; attempt <= MaxRetries; attempt++)
@@ -104,16 +104,23 @@ public class Api
         return null;
     }
 
-    public static async Task SendStatTrakIncrement(int targetUid, string userId)
+    public static async Task SendStatTrakIncrementAsync(ulong userId, int targetUid)
     {
+        if (!HasApiKey())
+            return;
         var url = GetUrl("/api/increment-item-stattrak");
         var request = new StatTrakIncrementRequest
         {
             ApiKey = ConVars.ApiKey.Value,
             TargetUid = targetUid,
-            UserId = userId,
+            UserId = userId.ToString(),
         };
         await PostAsync(url, request);
+    }
+
+    public static async void SendStatTrakIncrement(ulong userId, int targetUid)
+    {
+        await SendStatTrakIncrementAsync(userId, targetUid);
     }
 
     public static async Task<SignInUserResponse?> SendSignIn(string userId)

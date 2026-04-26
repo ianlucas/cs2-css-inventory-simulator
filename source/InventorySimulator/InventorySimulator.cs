@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Memory;
 
@@ -29,10 +30,26 @@ public partial class InventorySimulator : BasePlugin
         Natives.CCSPlayerController_ProcessUsercmds.Hook(OnProcessUsercmds, HookMode.Post);
         VirtualFunctions.GiveNamedItemFunc.Hook(OnGiveNamedItemPre, HookMode.Pre);
         Natives.CCSPlayerInventory_GetItemInLoadout.Hook(GetItemInLoadout, HookMode.Post);
-        ConVars.File.ValueChanged += HandleFileChanged;
-        ConVars.IsRequireInventory.ValueChanged += HandleIsRequireInventoryChanged;
-        HandleFileChanged(null, ConVars.File.Value);
-        HandleIsRequireInventoryChanged(null, ConVars.IsRequireInventory.Value);
+        ConVars.File.ValueChanged += OnFileChanged;
+        ConVars.IsRequireInventory.ValueChanged += OnIsRequireInventoryChanged;
+        OnFileChanged(null, ConVars.File.Value);
+        OnIsRequireInventoryChanged(null, ConVars.IsRequireInventory.Value);
+    }
+
+    public void OnFileChanged(object? _, string value)
+    {
+        if (Inventories.Load(value))
+            foreach (var player in Utilities.GetPlayers().Where(p => !p.IsBot))
+                if (Inventories.TryGet(player.SteamID, out var inventory))
+                    player.GetState().Inventory = inventory;
+    }
+
+    public void OnIsRequireInventoryChanged(object? _, bool value)
+    {
+        if (ConVars.IsRequireInventory.Value)
+            Natives.CServerSideClientBase_ActivatePlayer.Hook(OnActivatePlayerPre, HookMode.Pre);
+        else
+            Natives.CServerSideClientBase_ActivatePlayer.Unhook(OnActivatePlayerPre, HookMode.Pre);
     }
 
     public override void Unload(bool hotReload)
