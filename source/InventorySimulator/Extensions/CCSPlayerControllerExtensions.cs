@@ -59,7 +59,12 @@ public static class CCSPlayerControllerExtensions
         {
             if (self.IsValid)
             {
-                self.PrintToChat(CSS.Plugin.Localizer["invsim.ws_completed"]);
+                self.PrintToChat(
+                    CSS.Plugin.Localizer[
+                        "invsim.ws_completed",
+                        InventorySimulatorCtx.GetChatPrefix()
+                    ]
+                );
                 self.HandleInventoryLoad();
                 self.HandlePostRefreshInventory(oldInventory);
             }
@@ -312,14 +317,16 @@ public static class CCSPlayerControllerExtensions
         controllerState.IsFetching = false;
         Server.NextWorldUpdate(() =>
         {
+            var prefix = InventorySimulatorCtx.GetChatPrefix();
             if (response == null)
             {
-                self?.PrintToChat(CSS.Plugin.Localizer["invsim.login_failed"]);
+                self?.PrintToChat(CSS.Plugin.Localizer["invsim.login_failed", prefix]);
                 return;
             }
             self?.PrintToChat(
                 CSS.Plugin.Localizer[
                     "invsim.login",
+                    prefix,
                     $"{Api.GetUrl("/api/sign-in/callback")}?token={response.Token}"
                 ]
             );

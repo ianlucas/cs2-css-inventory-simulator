@@ -46,6 +46,12 @@ public static class ConVars
         30
     );
 
+    public static readonly FakeConVar<string> ChatPrefix = new(
+        "invsim_chat_prefix",
+        "Prefix displayed before chat messages.",
+        ""
+    );
+
     public static readonly FakeConVar<string> WsUrlPrintFormat = new(
         "invsim_ws_url_print_format",
         "URL format string displayed when using the !ws command.",

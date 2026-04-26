@@ -16,6 +16,9 @@ invsim_ws_immediately false
 invsim_ws_cooldown 30
     Cooldown duration in seconds between inventory refreshes per player.
 
+invsim_chat_prefix ""
+    Prefix displayed before chat messages.
+
 invsim_ws_url_print_format "{Host}"
     URL format string displayed when using the !ws command.
 

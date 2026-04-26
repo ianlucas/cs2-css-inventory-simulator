@@ -1,11 +1,11 @@
 {
-  "invsim.announce": "Acesse seu inventário em {0}.",
-  "invsim.ws_new": "Seu inventário será atualizado em instantes.",
-  "invsim.ws_in_progress": "Seu inventário está sendo atualizado.",
-  "invsim.ws_cooldown": "Você não pode atualizar seu inventário agora. Aguarde {0} segundos.",
-  "invsim.ws_completed": "Seu inventário foi atualizado.",
-  "invsim.spray_cooldown": "Você não pode grafitar agora. Aguarde {0} segundos.",
-  "invsim.login_in_progress": "Tentando autenticar ao seu inventário...",
-  "invsim.login": "Acesse {0} para ver seu inventário.",
-  "invsim.login_failed": "Não foi possível autenticar ao seu inventário, tente novamente mais tarde."
+  "invsim.announce": "{0}Acesse seu inventário em {1}.",
+  "invsim.ws_new": "{0}Seu inventário será atualizado em instantes.",
+  "invsim.ws_in_progress": "{0}Seu inventário está sendo atualizado.",
+  "invsim.ws_cooldown": "{0}Você não pode atualizar seu inventário agora. Aguarde {1} segundos.",
+  "invsim.ws_completed": "{0}Seu inventário foi atualizado.",
+  "invsim.spray_cooldown": "{0}Você não pode grafitar agora. Aguarde {1} segundos.",
+  "invsim.login_in_progress": "{0}Tentando autenticar ao seu inventário...",
+  "invsim.login": "{0}Acesse {0} para ver seu inventário.",
+  "invsim.login_failed": "{0}Não foi possível autenticar ao seu inventário, tente novamente mais tarde."
 }

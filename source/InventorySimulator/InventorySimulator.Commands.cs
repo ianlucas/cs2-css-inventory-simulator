@@ -17,8 +17,9 @@ public partial class InventorySimulator
     )]
     public void OnWSCommand(CCSPlayerController? player, CommandInfo _)
     {
+        var prefix = InventorySimulatorCtx.GetChatPrefix();
         var url = UrlHelper.FormatUrl(ConVars.WsUrlPrintFormat.Value, ConVars.Url.Value);
-        player?.PrintToChat(Localizer["invsim.announce", url]);
+        player?.PrintToChat(Localizer["invsim.announce", prefix, url]);
         if (!ConVars.IsWsEnabled.Value || player == null)
             return;
         var controllerState = player.GetState();
@@ -26,16 +27,16 @@ public partial class InventorySimulator
         var diff = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - controllerState.WsUpdatedAt;
         if (diff < cooldown)
         {
-            player.PrintToChat(Localizer["invsim.ws_cooldown", cooldown - diff]);
+            player.PrintToChat(Localizer["invsim.ws_cooldown", prefix, cooldown - diff]);
             return;
         }
         if (controllerState.IsFetching)
         {
-            player.PrintToChat(Localizer["invsim.ws_in_progress"]);
+            player.PrintToChat(Localizer["invsim.ws_in_progress", prefix]);
             return;
         }
         player.RefreshInventory(force: true);
-        player.PrintToChat(Localizer["invsim.ws_new"]);
+        player.PrintToChat(Localizer["invsim.ws_new", prefix]);
     }
 
     [ConsoleCommand(
@@ -51,7 +52,13 @@ public partial class InventorySimulator
             var diff = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - controllerState.SprayUsedAt;
             if (diff < cooldown)
             {
-                player.PrintToChat(Localizer["invsim.spray_cooldown", cooldown - diff]);
+                player.PrintToChat(
+                    Localizer[
+                        "invsim.spray_cooldown",
+                        InventorySimulatorCtx.GetChatPrefix(),
+                        cooldown - diff
+                    ]
+                );
                 return;
             }
             player.SprayGraffiti();
@@ -67,7 +74,9 @@ public partial class InventorySimulator
         if (ConVars.IsWsLogin.Value && Api.HasApiKey() && player != null)
         {
             var controllerState = player.GetState();
-            player.PrintToChat(Localizer["invsim.login_in_progress"]);
+            player.PrintToChat(
+                Localizer["invsim.login_in_progress", InventorySimulatorCtx.GetChatPrefix()]
+            );
             if (controllerState.IsAuthenticating)
                 return;
             player.SignIn();
