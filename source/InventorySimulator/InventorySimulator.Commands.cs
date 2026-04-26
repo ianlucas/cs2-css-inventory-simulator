@@ -11,7 +11,10 @@ namespace InventorySimulator;
 
 public partial class InventorySimulator
 {
-    [ConsoleCommand("css_ws", "Refreshes player's inventory.")]
+    [ConsoleCommand(
+        "css_ws",
+        "Refreshes player inventory from the Inventory Simulator service and displays the configured URL."
+    )]
     public void OnWSCommand(CCSPlayerController? player, CommandInfo _)
     {
         var url = UrlHelper.FormatUrl(ConVars.WsUrlPrintFormat.Value, ConVars.Url.Value);
@@ -35,7 +38,10 @@ public partial class InventorySimulator
         player.PrintToChat(Localizer["invsim.ws_new"]);
     }
 
-    [ConsoleCommand("css_spray", "Spray player's graffiti.")]
+    [ConsoleCommand(
+        "css_spray",
+        "Applies the player's equipped graffiti spray at their current location."
+    )]
     public void OnSprayCommand(CCSPlayerController? player, CommandInfo _)
     {
         if (player != null && ConVars.IsSprayEnabled.Value)
@@ -52,7 +58,10 @@ public partial class InventorySimulator
         }
     }
 
-    [ConsoleCommand("css_wslogin", "Authenticate player to Inventory Simulator.")]
+    [ConsoleCommand(
+        "css_wslogin",
+        "Authenticates the player with Inventory Simulator and displays their login URL."
+    )]
     public void OnWsloginCommand(CCSPlayerController? player, CommandInfo _)
     {
         if (ConVars.IsWsLogin.Value && Api.HasApiKey() && player != null)
