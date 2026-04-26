@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-using System.Runtime.InteropServices;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
@@ -30,7 +29,7 @@ public partial class InventorySimulator
                             Natives.CServerSideClientBase_ActivatePlayer.Invoke(thisPtr);
                     });
                 if (!controllerState.IsFetching)
-                    HandlePlayerInventoryRefresh(player);
+                    player.RefreshInventory();
                 return HookResult.Stop;
             }
         }
@@ -42,7 +41,7 @@ public partial class InventorySimulator
         if (!ConVars.IsSprayOnUse.Value)
             return HookResult.Continue;
         var player = hook.GetParam<CCSPlayerController>(0);
-        HandleClientProcessUsercmds(player);
+        player.HandleProcessUsercmds();
         return HookResult.Continue;
     }
 

@@ -31,7 +31,7 @@ public partial class InventorySimulator
             player.PrintToChat(Localizer["invsim.ws_in_progress"]);
             return;
         }
-        HandlePlayerInventoryRefresh(player, true);
+        player.RefreshInventory(force: true);
         player.PrintToChat(Localizer["invsim.ws_new"]);
     }
 
@@ -48,7 +48,7 @@ public partial class InventorySimulator
                 player.PrintToChat(Localizer["invsim.spray_cooldown", cooldown - diff]);
                 return;
             }
-            HandlePlayerGraffitiSpray(player);
+            player.SprayGraffiti();
         }
     }
 
@@ -61,7 +61,7 @@ public partial class InventorySimulator
             player.PrintToChat(Localizer["invsim.login_in_progress"]);
             if (controllerState.IsAuthenticating)
                 return;
-            HandleSignIn(player);
+            player.SignIn();
         }
     }
 }
