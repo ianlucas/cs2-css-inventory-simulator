@@ -30,7 +30,7 @@ public static class CEconItemViewExtensions
         if (steamId != null)
             self.AccountID = new CSteamID(steamId.Value).GetAccountID().m_AccountID;
         if (isMelee)
-            self.EntityQuality = 3;
+            self.EntityQuality = item.Stattrak >= 0 ? 9 : 3;
         else
             self.EntityQuality = item.Stattrak >= 0 ? 9 : 4;
         if (item.Nametag != null)
