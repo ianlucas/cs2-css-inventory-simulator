@@ -9,7 +9,7 @@
   "CCSPlayerPawn::IsAbleToApplySpray": {
     "signatures": {
       "library": "server",
-      "windows": "48 8B C4 48 89 58 ? 48 89 70 ? 48 89 78 ? 55 48 8D A8 ? ? ? ? 48 81 EC ? ? ? ? 4C 89 70",
+      "windows": "48 89 5C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 4C 89 74 24 ? 55 48 8D AC 24 ? ? ? ? 48 81 EC ? ? ? ? 49 8B F1",
       "linux": "55 48 89 E5 41 57 41 56 49 89 D6 41 55 48 8D 95 ? ? ? ? 49 89 CD"
     }
   },
@@ -24,7 +24,7 @@
     "signatures": {
       "library": "engine2",
       "windows": "40 53 48 83 EC ? 48 89 6C 24 ? 48 8B D9 48 89 74 24 ? 48 89 7C 24",
-      "linux": "55 48 89 E5 41 56 41 55 41 54 53 48 89 FB 48 83 EC ? E8"
+      "linux": "55 48 89 E5 41 57 41 56 41 55 41 54 53 48 89 FB 48 83 EC ? E8 ? ? ? ? 48 8D 3D"
     }
   },
   "CCSPlayerInventory::GetItemInLoadout": {
