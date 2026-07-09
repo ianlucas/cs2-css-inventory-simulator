@@ -99,8 +99,8 @@
   },
   "CCSPlayer_WeaponServices::DropWeapon": {
     "offsets": {
-      "windows": 25,
-      "linux": 26
+      "windows": 28,
+      "linux": 29
     }
   },
   "CCSPlayerInventory::m_pSOCache": {
