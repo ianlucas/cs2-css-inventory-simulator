@@ -8,47 +8,13 @@ using System.Runtime.InteropServices;
 
 namespace InventorySimulator;
 
-// This is a hack by Nuko.
-[StructLayout(LayoutKind.Explicit, Size = 0x44)]
-public struct TraceHitboxData
+// Thanks @Nukoooo.
+[StructLayout(LayoutKind.Explicit, Size = 0xC0)]
+public struct CGameTrace
 {
-    [FieldOffset(0x38)]
-    public int HitGroup;
-
-    [FieldOffset(0x40)]
-    public int HitboxId;
-}
-
-[StructLayout(LayoutKind.Explicit, Size = 0xB8)]
-public unsafe struct CGameTrace
-{
-    [FieldOffset(0)]
-    public void* Surface;
-
-    [FieldOffset(0x8)]
-    public void* HitEntity;
-
-    [FieldOffset(0x10)]
-    public TraceHitboxData* HitboxData;
-
-    [FieldOffset(0x50)]
-    public uint Contents;
-
-    [FieldOffset(0x78)]
-    public Vector3 StartPos;
-
     [FieldOffset(0x84)]
     public Vector3 EndPos;
 
     [FieldOffset(0x90)]
     public Vector3 HitNormal;
-
-    [FieldOffset(0x9C)]
-    public Vector3 Position;
-
-    [FieldOffset(0xAC)]
-    public float Fraction;
-
-    [FieldOffset(0xB6)]
-    public bool AllSolid;
 }
