@@ -77,16 +77,16 @@ public class Api
             : JsonSerializer.Deserialize<T>(responseContent);
     }
 
-    public static async Task<EquippedV4Response?> FetchEquippedAsync(ulong steamId)
+    public static async Task<EquippedV5Response?> FetchEquippedAsync(ulong steamId)
     {
-        var url = GetUrl($"/api/equipped/v4/{steamId}.json");
+        var url = GetUrl($"/api/equipped/v5/{steamId}.json");
         for (var attempt = 1; attempt <= MaxRetries; attempt++)
             try
             {
                 var response = await _httpClient.GetAsync(url);
                 response.EnsureSuccessStatusCode();
                 var jsonContent = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<EquippedV4Response>(jsonContent);
+                return JsonSerializer.Deserialize<EquippedV5Response>(jsonContent);
             }
             catch (Exception error)
             {
