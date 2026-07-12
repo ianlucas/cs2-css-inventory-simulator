@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 
 namespace InventorySimulator;
 
-public class EquippedV4Response
+public class EquippedV5Response
 {
     [JsonPropertyName("agents")]
     public Dictionary<byte, InventoryItem> Agents { get; set; } = [];

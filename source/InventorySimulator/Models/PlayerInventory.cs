@@ -8,9 +8,9 @@ using CounterStrikeSharp.API.Modules.Utils;
 
 namespace InventorySimulator;
 
-public class PlayerInventory(EquippedV4Response data)
+public class PlayerInventory(EquippedV5Response data)
 {
-    private readonly EquippedV4Response _data = data;
+    private readonly EquippedV5Response _data = data;
     public Dictionary<byte, InventoryItem> Agents => _data.Agents;
     public InventoryItem? MusicKit => _data.MusicKit;
     public InventoryItem? Graffiti => _data.Graffiti;

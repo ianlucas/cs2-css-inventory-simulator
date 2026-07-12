@@ -13,7 +13,7 @@ public class StickerItem
     public uint Def { get; set; }
 
     [JsonPropertyName("rotation")]
-    public int? Rotation { get; set; }
+    public float? Rotation { get; set; }
 
     [JsonPropertyName("schema")]
     public uint? Schema { get; set; }
