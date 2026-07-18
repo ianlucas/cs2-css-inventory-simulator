@@ -73,7 +73,11 @@ public class PlayerInventory(EquippedV5Response data)
         var def = item.Def.Value;
         var paint = item.Paint.Value;
         var wear = item.Wear.Value;
-        var stickers = string.Join("_", item.Stickers.Select(s => s.Def));
+        var stickers = string.Join(
+            "_",
+            item.Stickers.OrderBy(s => s.Slot)
+                .Select(s => $"{s.Slot}:{s.Def}:{s.Schema}:{s.Wear}:{s.Rotation}:{s.X}:{s.Y}")
+        );
         while (
             WeaponWearCache.TryGetValue((paint, wear), out var cached)
             && (cached.def != def || cached.stickers != stickers)
