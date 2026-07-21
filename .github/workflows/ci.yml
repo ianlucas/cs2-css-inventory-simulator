@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -41,10 +41,10 @@ jobs:
         run: |
           sed -i 's/ModuleVersion => "1.0.0"/ModuleVersion => "${{ inputs.version }}"/g' source/${{ env.project_name }}/${{ env.project_name }}.cs
 
-      - name: Set up .NET 8
-        uses: actions/setup-dotnet@v5
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "8.x"
+          dotnet-version: "10.x"
 
       - name: Restore dependencies
         run: dotnet restore
