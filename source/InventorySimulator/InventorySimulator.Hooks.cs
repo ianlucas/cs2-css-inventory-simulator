@@ -85,7 +85,7 @@ public partial class InventorySimulator
         if (ret == nint.Zero)
             return HookResult.Continue;
         var itemView = new CEconItemView(ret);
-        var player = Utilities.GetPlayerFromSteamId(inventory.SOCache.Owner.SteamID);
+        var player = PlayerHelper.GetPlayerFromSteamId(inventory.SOCache.Owner.SteamID);
         if (player == null)
             return HookResult.Continue;
         var team = hook.GetParam<int>(1);

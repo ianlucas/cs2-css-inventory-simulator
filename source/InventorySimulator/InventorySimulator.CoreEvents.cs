@@ -22,7 +22,7 @@ public partial class InventorySimulator
                 var sprayDecal = entity.As<CPlayerSprayDecal>();
                 if (!sprayDecal.IsValid || sprayDecal.AccountID == 0)
                     return;
-                var player = Utilities.GetPlayerFromSteamId(sprayDecal.AccountID);
+                var player = PlayerHelper.GetPlayerFromAccountId(sprayDecal.AccountID);
                 if (player == null || player.IsBot)
                     return;
                 player.HandleSprayDecalCreated(sprayDecal);
