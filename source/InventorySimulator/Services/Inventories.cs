@@ -40,7 +40,7 @@ public static class Inventories
         }
         catch
         {
-            CSS.Plugin.Logger.LogError("Error when processing \"{File}\".", filename);
+            Runtime.Plugin.Logger.LogError("Error when processing \"{File}\".", filename);
             return false;
         }
     }

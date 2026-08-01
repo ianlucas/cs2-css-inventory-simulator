@@ -17,7 +17,7 @@ public partial class InventorySimulator
     )]
     public void OnWSCommand(CCSPlayerController? player, CommandInfo _)
     {
-        var prefix = InventorySimulatorCtx.GetChatPrefix();
+        var prefix = Rules.GetChatPrefix();
         var url = UrlHelper.FormatUrl(ConVars.WsUrlPrintFormat.Value, ConVars.Url.Value);
         player?.PrintToChat(Localizer["invsim.announce", prefix, url]);
         if (!ConVars.IsWsEnabled.Value || player == null)
@@ -53,11 +53,7 @@ public partial class InventorySimulator
             if (diff < cooldown)
             {
                 player.PrintToChat(
-                    Localizer[
-                        "invsim.spray_cooldown",
-                        InventorySimulatorCtx.GetChatPrefix(),
-                        cooldown - diff
-                    ]
+                    Localizer["invsim.spray_cooldown", Rules.GetChatPrefix(), cooldown - diff]
                 );
                 return;
             }
@@ -74,9 +70,7 @@ public partial class InventorySimulator
         if (ConVars.IsWsLogin.Value && Api.HasApiKey() && player != null)
         {
             var controllerState = player.GetState();
-            player.PrintToChat(
-                Localizer["invsim.login_in_progress", InventorySimulatorCtx.GetChatPrefix()]
-            );
+            player.PrintToChat(Localizer["invsim.login_in_progress", Rules.GetChatPrefix()]);
             if (controllerState.IsAuthenticating)
                 return;
             player.SignIn();

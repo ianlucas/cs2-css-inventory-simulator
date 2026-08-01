@@ -3,16 +3,19 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Core.Translations;
 
 namespace InventorySimulator;
 
-public static class CSS
+public static class Rules
 {
-    public static BasePlugin Plugin { get; set; } = null!;
-
-    public static void Initialize(BasePlugin plugin)
+    public static string GetChatPrefix(bool stripColors = false)
     {
-        Plugin = plugin;
+        var prefix = ConVars.ChatPrefix.Value;
+        if (prefix != "")
+            return $"{(stripColors
+            ? prefix.StripColorTags()
+            : prefix.ReplaceColorTags())} ";
+        return "";
     }
 }

@@ -18,7 +18,7 @@ public partial class InventorySimulator : BasePlugin
 
     public override void Load(bool hotReload)
     {
-        CSS.Initialize(this);
+        Runtime.Initialize(this);
         ConVars.Initialize(this);
         RegisterListener<Listeners.OnEntityCreated>(OnEntityCreated);
         RegisterListener<Listeners.OnEntityDeleted>(OnEntityDeleted);
