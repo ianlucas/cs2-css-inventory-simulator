@@ -5,6 +5,8 @@
   "invsim.ws_cooldown": "{0}You cannot refresh your inventory right now. Please wait {1} seconds.",
   "invsim.ws_completed": "{0}Your inventory has been refreshed.",
   "invsim.spray_cooldown": "{0}You cannot spray right now. Please wait {1} seconds.",
+  "invsim.spray_charges": "{0}Charges remaining: {1}",
+  "invsim.spray_charges_empty": "{0}Your graffiti has run out of charges and was removed.",
   "invsim.login_in_progress": "{0}Trying to authenticate to your inventory...",
   "invsim.login": "{0}Access {1} to view your inventory.",
   "invsim.login_failed": "{0}Unable to authenticate to your inventory, please try again later."

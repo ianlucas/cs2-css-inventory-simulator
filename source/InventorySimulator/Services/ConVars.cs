@@ -100,6 +100,18 @@ public static class ConVars
         false
     );
 
+    public static readonly FakeConVar<bool> IsPublicApiStatTrakIncrement = new(
+        "invsim_public_api_stattrak_increment",
+        "Send keyless StatTrak increment requests to the public API when invsim_apikey is not set.",
+        true
+    );
+
+    public static readonly FakeConVar<bool> IsPublicApiSprayConsume = new(
+        "invsim_public_api_spray_consume",
+        "Send keyless graffiti consume requests to the public API when invsim_apikey is not set.",
+        true
+    );
+
     public static readonly FakeConVar<bool> IsStatTrakIgnoreBots = new(
         "invsim_stattrak_ignore_bots",
         "Ignore StatTrak kill count increments for bot kills.",

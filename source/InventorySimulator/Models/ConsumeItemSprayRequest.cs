@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 
 namespace InventorySimulator;
 
-public class StatTrakIncrementRequest
+public class ConsumeItemSprayRequest
 {
     [JsonPropertyName("apiKey")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

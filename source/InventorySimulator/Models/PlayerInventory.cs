@@ -124,4 +124,9 @@ public class PlayerInventory(EquippedV5Response data)
             return _data.MusicKit;
         return null;
     }
+
+    public void ClearGraffiti()
+    {
+        _data.Graffiti = null;
+    }
 }

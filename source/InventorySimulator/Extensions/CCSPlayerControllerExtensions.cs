@@ -365,7 +365,27 @@ public static class CCSPlayerControllerExtensions
             sprayDecal.TintID = item.Tint.Value;
             sprayDecal.DispatchSpawn();
             self.EmitSound("SprayCan.Paint");
+            self.ConsumeGraffitiCharge(item);
         }
+    }
+
+    public static void ConsumeGraffitiCharge(this CCSPlayerController self, InventoryItem item)
+    {
+        if (item.Charges == null)
+            return;
+        item.Charges -= 1;
+        if (item.Uid != null)
+            Api.SendConsumeItemSpray(self.SteamID, item.Uid.Value);
+        var prefix = InventorySimulatorCtx.GetChatPrefix();
+        if (item.Charges <= 0)
+        {
+            self.GetState().Inventory?.ClearGraffiti();
+            self.PrintToChat(CSS.Plugin.Localizer["invsim.spray_charges_empty", prefix]);
+        }
+        else
+            self.PrintToChat(
+                CSS.Plugin.Localizer["invsim.spray_charges", prefix, item.Charges.Value]
+            );
     }
 
     public static void HandleSprayDecalCreated(

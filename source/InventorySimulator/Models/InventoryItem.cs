@@ -9,6 +9,9 @@ namespace InventorySimulator;
 
 public class InventoryItem
 {
+    [JsonPropertyName("charges")]
+    public int? Charges { get; set; }
+
     [JsonPropertyName("def")]
     public ushort? Def { get; set; }
 

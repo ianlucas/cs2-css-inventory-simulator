@@ -32,8 +32,36 @@ public partial class InventorySimulator : BasePlugin
         Natives.CCSPlayerInventory_GetItemInLoadout.Hook(GetItemInLoadout, HookMode.Post);
         ConVars.File.ValueChanged += OnFileChanged;
         ConVars.IsRequireInventory.ValueChanged += OnIsRequireInventoryChanged;
+        ConVars.Url.ValueChanged += OnUrlChanged;
+        ConVars.ApiKey.ValueChanged += OnApiSuspensionConVarChanged;
+        ConVars.IsPublicApiStatTrakIncrement.ValueChanged += OnApiSuspensionConVarChanged;
+        ConVars.IsPublicApiSprayConsume.ValueChanged += OnApiSuspensionConVarChanged;
+        _lastUrl = ConVars.Url.Value;
         OnFileChanged(null, ConVars.File.Value);
         OnIsRequireInventoryChanged(null, ConVars.IsRequireInventory.Value);
+    }
+
+    private string _lastUrl = "";
+
+    public void OnUrlChanged(object? _, string value)
+    {
+        Api.ResetSuspension();
+        if (value == _lastUrl)
+            return;
+        _lastUrl = value;
+        var isOfficialHost =
+            Uri.TryCreate(value, UriKind.Absolute, out var uri)
+            && uri.Host.Equals("inventory.cstrike.app", StringComparison.OrdinalIgnoreCase);
+        if (!isOfficialHost)
+        {
+            ConVars.IsPublicApiStatTrakIncrement.Value = false;
+            ConVars.IsPublicApiSprayConsume.Value = false;
+        }
+    }
+
+    public void OnApiSuspensionConVarChanged<T>(object? _, T value)
+    {
+        Api.ResetSuspension();
     }
 
     public void OnFileChanged(object? _, string value)

@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -18,6 +19,47 @@ public class Api
 
     private const int RetryDelayMs = 100;
 
+    // Mirrors the rate limits enforced by Inventory Simulator's public API.
+    private const double StatTrakIncrementRateLimitCapacity = 50;
+    private const double StatTrakIncrementRateLimitRefillIntervalSeconds = 3.6;
+    private const double SprayConsumeRateLimitCapacity = 1;
+    private const double SprayConsumeRateLimitRefillIntervalSeconds = 30;
+
+    private static volatile bool _isSuspended = false;
+
+    private static readonly ConcurrentDictionary<(ulong, int), RateLimitBucket> _statTrakBuckets =
+        new();
+
+    private static readonly ConcurrentDictionary<(ulong, int), RateLimitBucket> _sprayBuckets =
+        new();
+
+    private class RateLimitBucket(double capacity, double refillIntervalSeconds)
+    {
+        private readonly double _capacity = capacity;
+        private double _tokens = capacity;
+        private DateTime _updatedAt = DateTime.UtcNow;
+
+        public bool TryConsume()
+        {
+            lock (this)
+            {
+                var now = DateTime.UtcNow;
+                var elapsedSeconds = (now - _updatedAt).TotalSeconds;
+                _tokens = Math.Min(_capacity, _tokens + elapsedSeconds / refillIntervalSeconds);
+                _updatedAt = now;
+                if (_tokens < 1)
+                    return false;
+                _tokens -= 1;
+                return true;
+            }
+        }
+    }
+
+    public static void ResetSuspension()
+    {
+        _isSuspended = false;
+    }
+
     public static string GetUrl(string pathname = "")
     {
         return $"{ConVars.Url.Value}{pathname}";
@@ -28,7 +70,16 @@ public class Api
         return ConVars.ApiKey.Value != "";
     }
 
-    private static async Task<HttpResponseMessage?> SendPostAsync(string url, object request)
+    private static string? GetApiKeyOrNull()
+    {
+        return HasApiKey() ? ConVars.ApiKey.Value : null;
+    }
+
+    private static async Task<HttpResponseMessage?> SendPostAsync(
+        string url,
+        object request,
+        bool suspendOnUnauthorized = false
+    )
     {
         try
         {
@@ -36,6 +87,8 @@ public class Api
             var response = await _httpClient.PostAsync(url, content);
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
+                if (suspendOnUnauthorized)
+                    _isSuspended = true;
                 CSS.Plugin.Logger.LogError(
                     "POST {Url} failed, check your invsim_apikey's value.",
                     url
@@ -63,6 +116,26 @@ public class Api
     private static async Task PostAsync(string url, object request)
     {
         await SendPostAsync(url, request);
+    }
+
+    private static bool CanSendPublicApiRequest(
+        bool isEnabled,
+        ConcurrentDictionary<(ulong, int), RateLimitBucket> buckets,
+        ulong userId,
+        int targetUid,
+        double capacity,
+        double refillIntervalSeconds
+    )
+    {
+        if (HasApiKey())
+            return true;
+        if (!isEnabled)
+            return false;
+        var bucket = buckets.GetOrAdd(
+            (userId, targetUid),
+            _ => new RateLimitBucket(capacity, refillIntervalSeconds)
+        );
+        return bucket.TryConsume();
     }
 
     private static async Task<T?> PostAsync<T>(string url, object request)
@@ -106,21 +179,62 @@ public class Api
 
     public static async Task SendStatTrakIncrementAsync(ulong userId, int targetUid)
     {
-        if (!HasApiKey())
+        if (_isSuspended)
+            return;
+        if (
+            !CanSendPublicApiRequest(
+                ConVars.IsPublicApiStatTrakIncrement.Value,
+                _statTrakBuckets,
+                userId,
+                targetUid,
+                StatTrakIncrementRateLimitCapacity,
+                StatTrakIncrementRateLimitRefillIntervalSeconds
+            )
+        )
             return;
         var url = GetUrl("/api/increment-item-stattrak");
         var request = new StatTrakIncrementRequest
         {
-            ApiKey = ConVars.ApiKey.Value,
+            ApiKey = GetApiKeyOrNull(),
             TargetUid = targetUid,
             UserId = userId.ToString(),
         };
-        await PostAsync(url, request);
+        await SendPostAsync(url, request, suspendOnUnauthorized: true);
     }
 
     public static async void SendStatTrakIncrement(ulong userId, int targetUid)
     {
         await SendStatTrakIncrementAsync(userId, targetUid);
+    }
+
+    public static async Task SendConsumeItemSprayAsync(ulong userId, int targetUid)
+    {
+        if (_isSuspended)
+            return;
+        if (
+            !CanSendPublicApiRequest(
+                ConVars.IsPublicApiSprayConsume.Value,
+                _sprayBuckets,
+                userId,
+                targetUid,
+                SprayConsumeRateLimitCapacity,
+                SprayConsumeRateLimitRefillIntervalSeconds
+            )
+        )
+            return;
+        var url = GetUrl("/api/consume-item-spray");
+        var request = new ConsumeItemSprayRequest
+        {
+            ApiKey = GetApiKeyOrNull(),
+            TargetUid = targetUid,
+            UserId = userId.ToString(),
+        };
+        await SendPostAsync(url, request, suspendOnUnauthorized: true);
+    }
+
+    public static async void SendConsumeItemSpray(ulong userId, int targetUid)
+    {
+        await SendConsumeItemSprayAsync(userId, targetUid);
     }
 
     public static async Task<SignInUserResponse?> SendSignIn(string userId)

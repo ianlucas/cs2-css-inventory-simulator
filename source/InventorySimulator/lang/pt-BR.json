@@ -5,6 +5,8 @@
   "invsim.ws_cooldown": "{0}Você não pode atualizar seu inventário agora. Aguarde {1} segundos.",
   "invsim.ws_completed": "{0}Seu inventário foi atualizado.",
   "invsim.spray_cooldown": "{0}Você não pode grafitar agora. Aguarde {1} segundos.",
+  "invsim.spray_charges": "{0}Cargas restantes: {1}",
+  "invsim.spray_charges_empty": "{0}Seu grafite ficou sem cargas e foi removido.",
   "invsim.login_in_progress": "{0}Tentando autenticar ao seu inventário...",
   "invsim.login": "{0}Acesse {1} para ver seu inventário.",
   "invsim.login_failed": "{0}Não foi possível autenticar ao seu inventário, tente novamente mais tarde."

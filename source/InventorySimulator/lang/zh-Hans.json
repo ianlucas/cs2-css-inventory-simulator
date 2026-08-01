@@ -5,6 +5,8 @@
   "invsim.ws_cooldown": "{0}您现在无法刷新库存。请等待 {1} 秒后重试。",
   "invsim.ws_completed": "{0}您的库存已刷新。",
   "invsim.spray_cooldown": "{0}您现在暂时无法使用涂鸦，请等待 {1} 秒后再试。",
+  "invsim.spray_charges": "{0}剩余使用次数：{1}",
+  "invsim.spray_charges_empty": "{0}您的涂鸦已用完并被移除。",
   "invsim.login_in_progress": "{0}正在尝试登录您的库存...",
   "invsim.login": "{0}访问 {1} 以查看您的库存。",
   "invsim.login_failed": "{0}无法登录您的库存，请稍后再试。"
