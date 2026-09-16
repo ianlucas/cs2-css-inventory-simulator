@@ -10,13 +10,10 @@ namespace InventorySimulator;
 
 public static partial class Natives
 {
-    public static readonly MemoryFunctionWithReturn<
-        nint,
-        nint,
-        nint,
-        nint,
-        nint
-    > CCSPlayerPawn_IsAbleToApplySpray = new(
-        GameData.GetSignature("CCSPlayerPawn::IsAbleToApplySpray")
+    public static readonly MemoryFunctionWithReturn<nint, nint> CEconItemView_Constructor = new(
+        GameData.GetSignature("CEconItemView::CEconItemView")
     );
+
+    public static readonly MemoryFunctionWithReturn<nint, nint, nint> CEconItemView_OperatorEquals =
+        new(GameData.GetSignature("CEconItemView::operator="));
 }
