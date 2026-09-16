@@ -18,4 +18,12 @@ public static partial class Natives
     > CEconItemSchema_GetItemDefinition = new(
         GameData.GetSignature("CEconItemSchema::GetItemDefinition")
     );
+
+    public static readonly MemoryFunctionWithReturn<
+        nint,
+        string,
+        nint
+    > CEconItemSchema_GetItemDefinitionByName = new(
+        GameData.GetSignature("CEconItemSchema::GetItemDefinitionByName")
+    );
 }
