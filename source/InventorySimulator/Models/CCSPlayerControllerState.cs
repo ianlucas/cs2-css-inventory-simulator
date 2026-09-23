@@ -25,7 +25,7 @@ public class CCSPlayerControllerState(ulong steamId)
 
     private static readonly ConcurrentDictionary<
         (ulong SteamID, int Team, int Slot),
-        nint
+        (nint Ptr, InventoryItem Item, int? Stattrak)
     > _econItemViewManager = [];
 
     public void TriggerPostFetch()
@@ -46,15 +46,19 @@ public class CCSPlayerControllerState(ulong steamId)
     public nint GetEconItemView(int team, int slot, InventoryItem item, nint copyFrom = 0)
     {
         var key = (SteamID, team, slot);
-        if (_econItemViewManager.TryGetValue(key, out var ptr))
+        if (_econItemViewManager.TryGetValue(key, out var entry))
         {
-            var existingItemView = new CEconItemView(ptr);
-            existingItemView.ApplyAttributes(item, (loadout_slot_t)slot, SteamID);
-            return ptr;
+            if (!ReferenceEquals(entry.Item, item) || entry.Stattrak != item.Stattrak)
+            {
+                var existingItemView = new CEconItemView(entry.Ptr);
+                existingItemView.ApplyAttributes(item, (loadout_slot_t)slot, SteamID);
+                _econItemViewManager[key] = (entry.Ptr, item, item.Stattrak);
+            }
+            return entry.Ptr;
         }
         var itemView = SchemaHelper.CreateCEconItemView(copyFrom);
         itemView.ApplyAttributes(item, (loadout_slot_t)slot, SteamID);
-        _econItemViewManager[key] = itemView.Handle;
+        _econItemViewManager[key] = (itemView.Handle, item, item.Stattrak);
         return itemView.Handle;
     }
 
@@ -62,13 +66,13 @@ public class CCSPlayerControllerState(ulong steamId)
     {
         foreach (var key in _econItemViewManager.Keys)
             if (key.SteamID == SteamID)
-                if (_econItemViewManager.TryRemove(key, out var ptr))
-                    Marshal.FreeHGlobal(ptr);
+                if (_econItemViewManager.TryRemove(key, out var entry))
+                    Marshal.FreeHGlobal(entry.Ptr);
     }
 
     public static void ClearAllEconItemView()
     {
-        foreach (var ptr in _econItemViewManager.Values)
-            Marshal.FreeHGlobal(ptr);
+        foreach (var entry in _econItemViewManager.Values)
+            Marshal.FreeHGlobal(entry.Ptr);
     }
 }
