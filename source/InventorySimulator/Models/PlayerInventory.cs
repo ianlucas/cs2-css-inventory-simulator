@@ -122,6 +122,8 @@ public class PlayerInventory(EquippedV5Response data)
             return _data.Collectible;
         if (slot == loadout_slot_t.LOADOUT_SLOT_MUSICKIT)
             return _data.MusicKit;
+        if (slot == loadout_slot_t.LOADOUT_SLOT_PET)
+            return _data.Pet;
         return null;
     }
 

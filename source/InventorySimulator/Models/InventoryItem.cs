@@ -30,6 +30,9 @@ public class InventoryItem
     [JsonPropertyName("paint")]
     public int? Paint { get; set; }
 
+    [JsonPropertyName("petId")]
+    public int? PetId { get; set; }
+
     [JsonPropertyName("seed")]
     public int? Seed { get; set; }
 
@@ -44,6 +47,9 @@ public class InventoryItem
 
     [JsonPropertyName("uid")]
     public int? Uid { get; set; }
+
+    [JsonPropertyName("upgradeLevel")]
+    public int? UpgradeLevel { get; set; }
 
     [JsonPropertyName("wear")]
     public float? Wear { get; set; }
@@ -85,7 +91,7 @@ public class InventoryItem
         var attributes = new List<(string, float)>();
         if (Paint != null)
             attributes.Add(("set item texture prefab", Paint.Value));
-        if (Seed != null)
+        if (Seed != null && PetId == null)
             attributes.Add(("set item texture seed", Seed.Value));
         var wear = WearOverride ?? Wear;
         if (wear != null)
@@ -140,6 +146,22 @@ public class InventoryItem
         {
             var musicId = TypeHelper.ViewAs<int, float>(MusicId.Value);
             attributes.Add(("music id", musicId));
+        }
+        if (PetId != null)
+        {
+            var petId = TypeHelper.ViewAs<int, float>(PetId.Value);
+            attributes.Add(("pet id", petId));
+            if (Seed != null)
+            {
+                var petSeed = TypeHelper.ViewAs<int, float>(Seed.Value);
+                attributes.Add(("pet seed", petSeed));
+            }
+            // The game only deploys grown pets (pullet and hen) into a match.
+            var upgradeLevel = TypeHelper.ViewAs<int, float>(UpgradeLevel ?? 3);
+            attributes.Add(("upgrade level", upgradeLevel));
+            // A simulated pet is never hungry.
+            var foodExpiration = TypeHelper.ViewAs<int, float>(int.MaxValue);
+            attributes.Add(("pet food expiration date", foodExpiration));
         }
         _attributesCache = (Stattrak, attributes);
         return attributes;

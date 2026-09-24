@@ -30,6 +30,9 @@ public class EquippedV5Response
     [JsonPropertyName("musicKit")]
     public InventoryItem? MusicKit { get; set; }
 
+    [JsonPropertyName("pet")]
+    public InventoryItem? Pet { get; set; }
+
     [JsonPropertyName("tWeapons")]
     public Dictionary<ushort, InventoryItem> TWeapons { get; set; } = [];
 }

@@ -81,26 +81,27 @@ public partial class InventorySimulator
         var inventory = new CCSPlayerInventory(hook.GetParam<nint>(0));
         if (!inventory.IsValid)
             return HookResult.Continue;
+        var slot = hook.GetParam<int>(2);
         var ret = hook.GetReturn<nint>();
-        if (ret == nint.Zero)
+        // Unlike other slots, the pet slot has no default item to fall back to.
+        if (ret == nint.Zero && slot != (int)loadout_slot_t.LOADOUT_SLOT_PET)
             return HookResult.Continue;
-        var itemView = new CEconItemView(ret);
         var player = PlayerHelper.GetPlayerFromSteamId(inventory.SOCache.Owner.SteamID);
         if (player == null)
             return HookResult.Continue;
         var team = hook.GetParam<int>(1);
-        var slot = hook.GetParam<int>(2);
+        var def = ret != nint.Zero ? new CEconItemView(ret).ItemDefinitionIndex : (ushort)0;
         var controllerState = player.GetState();
         var item = controllerState.Inventory?.GetItemForSlot(
             (byte)team,
             (loadout_slot_t)slot,
-            itemView.ItemDefinitionIndex,
+            def,
             ConVars.IsFallbackTeam.Value,
             ConVars.MinModels.Value
         );
         if (item != null)
         {
-            hook.SetReturn(controllerState.GetEconItemView(team, slot, item, itemView.Handle));
+            hook.SetReturn(controllerState.GetEconItemView(team, slot, item, ret));
             return HookResult.Changed;
         }
         return HookResult.Continue;
