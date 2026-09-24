@@ -72,7 +72,8 @@ public class CCSPlayerControllerState(ulong steamId)
 
     public static void ClearAllEconItemView()
     {
-        foreach (var entry in _econItemViewManager.Values)
-            Marshal.FreeHGlobal(entry.Ptr);
+        foreach (var key in _econItemViewManager.Keys)
+            if (_econItemViewManager.TryRemove(key, out var entry))
+                Marshal.FreeHGlobal(entry.Ptr);
     }
 }
