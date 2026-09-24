@@ -99,8 +99,6 @@ public partial class InventorySimulator : BasePlugin
 
     public override void Unload(bool hotReload)
     {
-        // BasePlugin doesn't dispose function hooks, and they must be removed before freeing the
-        // item views they hand out.
         VirtualFunctions.GiveNamedItemFunc.Unhook(OnGiveNamedItemPre, HookMode.Pre);
         Natives.CCSPlayerInventory_GetItemInLoadout.Unhook(GetItemInLoadout, HookMode.Post);
         OnIsRequireInventoryChanged(null, false);
