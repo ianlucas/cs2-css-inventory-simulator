@@ -43,6 +43,8 @@ public partial class InventorySimulator : BasePlugin
     }
 
     private string _lastUrl = "";
+    private bool _isActivatePlayerHooked = false;
+    private bool _isProcessUsercmdsHooked = false;
 
     public void OnUrlChanged(object? _, string value)
     {
@@ -75,13 +77,14 @@ public partial class InventorySimulator : BasePlugin
 
     public void OnIsRequireInventoryChanged(object? _, bool value)
     {
-        if (ConVars.IsRequireInventory.Value)
+        if (value == _isActivatePlayerHooked)
+            return;
+        if (value)
             Natives.CServerSideClientBase_ActivatePlayer.Hook(OnActivatePlayerPre, HookMode.Pre);
         else
             Natives.CServerSideClientBase_ActivatePlayer.Unhook(OnActivatePlayerPre, HookMode.Pre);
+        _isActivatePlayerHooked = value;
     }
-
-    private bool _isProcessUsercmdsHooked = false;
 
     public void OnIsSprayOnUseChanged(object? _, bool value)
     {
