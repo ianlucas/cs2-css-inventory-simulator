@@ -25,7 +25,7 @@ public class CCSPlayerControllerState(ulong steamId)
 
     private static readonly ConcurrentDictionary<
         (ulong SteamID, int Team, int Slot),
-        (nint Ptr, InventoryItem Item, int? Stattrak)
+        (nint Ptr, string? Hash, int? Stattrak)
     > _econItemViewManager = [];
 
     public void TriggerPostFetch()
@@ -46,19 +46,19 @@ public class CCSPlayerControllerState(ulong steamId)
     public nint GetEconItemView(int team, int slot, InventoryItem item, nint copyFrom = 0)
     {
         var key = (SteamID, team, slot);
-        if (_econItemViewManager.TryGetValue(key, out var entry))
-        {
-            if (!ReferenceEquals(entry.Item, item) || entry.Stattrak != item.Stattrak)
-            {
-                var existingItemView = new CEconItemView(entry.Ptr);
-                existingItemView.ApplyAttributes(item, (loadout_slot_t)slot, SteamID);
-                _econItemViewManager[key] = (entry.Ptr, item, item.Stattrak);
-            }
+        var isCached = _econItemViewManager.TryGetValue(key, out var entry);
+        if (
+            isCached
+            && item.Hash != null
+            && entry.Hash == item.Hash
+            && entry.Stattrak == item.Stattrak
+        )
             return entry.Ptr;
-        }
-        var itemView = SchemaHelper.CreateCEconItemView(copyFrom);
+        var itemView = isCached
+            ? new CEconItemView(entry.Ptr)
+            : SchemaHelper.CreateCEconItemView(copyFrom);
         itemView.ApplyAttributes(item, (loadout_slot_t)slot, SteamID);
-        _econItemViewManager[key] = (itemView.Handle, item, item.Stattrak);
+        _econItemViewManager[key] = (itemView.Handle, item.Hash, item.Stattrak);
         return itemView.Handle;
     }
 
