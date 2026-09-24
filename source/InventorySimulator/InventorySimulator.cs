@@ -27,11 +27,11 @@ public partial class InventorySimulator : BasePlugin
         RegisterEventHandler<EventPlayerDeath>(OnPlayerDeathPre);
         RegisterEventHandler<EventRoundMvp>(OnRoundMvpPre);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect, HookMode.Post);
-        Natives.CCSPlayerController_ProcessUsercmds.Hook(OnProcessUsercmds, HookMode.Post);
         VirtualFunctions.GiveNamedItemFunc.Hook(OnGiveNamedItemPre, HookMode.Pre);
         Natives.CCSPlayerInventory_GetItemInLoadout.Hook(GetItemInLoadout, HookMode.Post);
         ConVars.File.ValueChanged += OnFileChanged;
         ConVars.IsRequireInventory.ValueChanged += OnIsRequireInventoryChanged;
+        ConVars.IsSprayOnUse.ValueChanged += OnIsSprayOnUseChanged;
         ConVars.Url.ValueChanged += OnUrlChanged;
         ConVars.ApiKey.ValueChanged += OnApiSuspensionConVarChanged;
         ConVars.IsPublicApiStatTrakIncrement.ValueChanged += OnApiSuspensionConVarChanged;
@@ -39,9 +39,12 @@ public partial class InventorySimulator : BasePlugin
         _lastUrl = ConVars.Url.Value;
         OnFileChanged(null, ConVars.File.Value);
         OnIsRequireInventoryChanged(null, ConVars.IsRequireInventory.Value);
+        OnIsSprayOnUseChanged(null, ConVars.IsSprayOnUse.Value);
     }
 
     private string _lastUrl = "";
+    private bool _isActivatePlayerHooked = false;
+    private bool _isProcessUsercmdsHooked = false;
 
     public void OnUrlChanged(object? _, string value)
     {
@@ -74,14 +77,34 @@ public partial class InventorySimulator : BasePlugin
 
     public void OnIsRequireInventoryChanged(object? _, bool value)
     {
-        if (ConVars.IsRequireInventory.Value)
+        if (value == _isActivatePlayerHooked)
+            return;
+        if (value)
             Natives.CServerSideClientBase_ActivatePlayer.Hook(OnActivatePlayerPre, HookMode.Pre);
         else
             Natives.CServerSideClientBase_ActivatePlayer.Unhook(OnActivatePlayerPre, HookMode.Pre);
+        _isActivatePlayerHooked = value;
+    }
+
+    public void OnIsSprayOnUseChanged(object? _, bool value)
+    {
+        if (value == _isProcessUsercmdsHooked)
+            return;
+        if (value)
+            Natives.CCSPlayerController_ProcessUsercmds.Hook(OnProcessUsercmds, HookMode.Post);
+        else
+            Natives.CCSPlayerController_ProcessUsercmds.Unhook(OnProcessUsercmds, HookMode.Post);
+        _isProcessUsercmdsHooked = value;
     }
 
     public override void Unload(bool hotReload)
     {
+        // BasePlugin doesn't dispose function hooks, and they must be removed before freeing the
+        // item views they hand out.
+        VirtualFunctions.GiveNamedItemFunc.Unhook(OnGiveNamedItemPre, HookMode.Pre);
+        Natives.CCSPlayerInventory_GetItemInLoadout.Unhook(GetItemInLoadout, HookMode.Post);
+        OnIsRequireInventoryChanged(null, false);
+        OnIsSprayOnUseChanged(null, false);
         CCSPlayerControllerState.ClearAllEconItemView();
     }
 }
