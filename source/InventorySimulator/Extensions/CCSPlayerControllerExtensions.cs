@@ -433,7 +433,6 @@ public static class CCSPlayerControllerExtensions
             "kill eater",
             statTrak
         );
-        Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_AttributeManager");
         Api.SendStatTrakIncrement(self.SteamID, item.Uid.Value);
     }
 
