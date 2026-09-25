@@ -51,12 +51,14 @@ public class CCSPlayerControllerState(ulong steamId)
         if (PetHandle == null)
             return null;
         var pet = new CHandle<CChicken>(PetHandle.Value).Value;
-        return pet != null && pet.IsValid && pet.DesignerName == "chicken" ? pet : null;
+        return pet != null && pet.IsValid && pet.DesignerName == "chicken" && !pet.IsMarkedForDeletion()
+            ? pet
+            : null;
     }
 
     public void RemovePet()
     {
-        // The map's own teardown removes every entity; removing one again mid-teardown is unsafe.
+        // A map change deletes every entity by itself; nothing is left to remove until the next map.
         if (!Pets.IsMapUnloading)
             GetPet()?.Remove();
         ForgetPet();

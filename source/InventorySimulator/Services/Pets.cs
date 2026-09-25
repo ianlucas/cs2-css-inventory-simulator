@@ -19,6 +19,9 @@ public static class Pets
 
     public static bool IsMapUnloading { get; set; } = false;
 
+    // Set on unload: callbacks queued by this load of the plugin must not spawn pets afterwards.
+    public static bool IsUnloaded { get; set; } = false;
+
     public static bool CanHavePet(this CCSPlayerController self) =>
         self.IsValid
         && !self.IsBot
@@ -37,6 +40,8 @@ public static class Pets
         Server.NextWorldUpdate(() =>
         {
             _queuedSpawns.Remove(index);
+            if (IsUnloaded)
+                return;
             var current = Utilities.GetPlayerFromIndex((int)index);
             if (current == null || !current.IsValid || current.SteamID != steamId)
                 return;
@@ -55,13 +60,14 @@ public static class Pets
         });
     }
 
+    public static bool IsMarkedForDeletion(this CChicken self) =>
+        (self.Entity!.Flags & EF_MARKED_FOR_DELETE) != 0;
+
     public static List<CChicken> FindChickens() =>
         Utilities
             .FindAllEntitiesByDesignerName<CChicken>("chicken")
             .Where(chicken =>
-                chicken.IsValid
-                && chicken.DesignerName == "chicken"
-                && (chicken.Entity!.Flags & EF_MARKED_FOR_DELETE) == 0
+                chicken.IsValid && chicken.DesignerName == "chicken" && !chicken.IsMarkedForDeletion()
             )
             .ToList();
 
@@ -69,9 +75,16 @@ public static class Pets
 
     // Keeps exactly the pets of players who may have one and removes every other chicken this
     // plugin created, including ones an earlier load of the plugin lost track of.
+    public static void QueueSpawnAll()
+    {
+        foreach (var player in Utilities.GetPlayers())
+            if (player.CanHavePet())
+                QueueSpawn(player);
+    }
+
     public static int Reconcile(string reason)
     {
-        if (IsMapUnloading)
+        if (IsMapUnloading || IsUnloaded)
             return 0;
         var removed = 0;
         try

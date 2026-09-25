@@ -54,7 +54,11 @@ public partial class InventorySimulator : BasePlugin
         // Deathmatch and practice never restart a round, so strays are also swept on a timer.
         _petsTimer = AddTimer(30, () => Pets.Reconcile("periodic check"), TimerFlags.REPEAT);
         if (hotReload)
-            Server.NextWorldUpdate(() => Pets.Reconcile("plugin load"));
+            Server.NextWorldUpdate(() =>
+            {
+                Pets.Reconcile("plugin load");
+                Pets.QueueSpawnAll();
+            });
     }
 
     private Timer? _petsTimer;
@@ -121,6 +125,8 @@ public partial class InventorySimulator : BasePlugin
             CCSPlayerControllerExtensions.RemoveAllPets();
             Pets.Reconcile("pets disabled");
         }
+        else
+            Pets.QueueSpawnAll();
     }
 
     public override void Unload(bool hotReload)
@@ -128,6 +134,7 @@ public partial class InventorySimulator : BasePlugin
         // Pets go first: an unhook that throws must not leave chickens behind.
         try
         {
+            Pets.IsUnloaded = true;
             _petsTimer?.Kill();
             CCSPlayerControllerExtensions.RemoveAllPets();
             foreach (var chicken in Pets.FindChickens())

@@ -40,9 +40,7 @@ public partial class InventorySimulator
     // Mode plugins such as Retakes move players when the round starts; the pet follows them there.
     public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo _)
     {
-        foreach (var player in Utilities.GetPlayers())
-            if (player.CanHavePet())
-                Pets.QueueSpawn(player);
+        Pets.QueueSpawnAll();
         return HookResult.Continue;
     }
 

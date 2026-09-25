@@ -60,8 +60,9 @@ public partial class InventorySimulator
         else if (designerName == "cs_player_controller")
         {
             var controller = entity.As<CCSPlayerController>();
+            // A real disconnect has already removed the pet, and a map change deletes it by itself.
             if (controller.SteamID != 0)
-                controller.RemoveState();
+                controller.RemoveState(removePet: false);
         }
     }
 }

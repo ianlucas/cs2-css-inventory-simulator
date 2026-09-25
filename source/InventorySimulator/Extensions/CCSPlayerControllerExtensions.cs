@@ -29,11 +29,14 @@ public static class CCSPlayerControllerExtensions
             self.RemoveState();
     }
 
-    public static void RemoveState(this CCSPlayerController self)
+    public static void RemoveState(this CCSPlayerController self, bool removePet = true)
     {
         var controllerState = self.GetState();
         controllerState.DisposeUseCmdTimer();
-        controllerState.RemovePet();
+        if (removePet)
+            controllerState.RemovePet();
+        else
+            controllerState.ForgetPet();
         controllerState.ClearEconItemView();
         _controllerStateManager.TryRemove(self.Index, out var _);
     }
@@ -67,7 +70,11 @@ public static class CCSPlayerControllerExtensions
             Server.NextWorldUpdate(() =>
             {
                 if (self.IsValid)
+                {
                     self.HandleInventoryLoad();
+                    // The player may have spawned before the inventory arrived.
+                    Pets.QueueSpawn(self);
+                }
             });
             return;
         }
@@ -133,6 +140,8 @@ public static class CCSPlayerControllerExtensions
 
     public static void SpawnPet(this CCSPlayerController self)
     {
+        if (Pets.IsUnloaded)
+            return;
         var controllerState = self.GetState();
         var item = ConVars.IsPetsEnabled.Value ? controllerState.Inventory?.Pet : null;
         if (
