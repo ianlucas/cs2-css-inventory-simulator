@@ -7,6 +7,7 @@ using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
+using Microsoft.Extensions.Logging;
 
 namespace InventorySimulator;
 
@@ -69,10 +70,16 @@ public partial class InventorySimulator
     [RequiresPermissions("@css/root")]
     public void OnPetsCommand(CCSPlayerController? player, CommandInfo command)
     {
-        if (command.GetArg(1) == "fix")
-            command.ReplyToCommand($"[pets] removed {Pets.Reconcile("css_invsim_pets fix")}");
-        foreach (var line in Pets.Describe())
+        var removed = command.GetArg(1) == "fix" ? Pets.Reconcile("css_invsim_pets fix") : -1;
+        var lines = Pets.Describe();
+        if (removed >= 0)
+            lines.Insert(0, $"removed {removed}");
+        // Hosted consoles may hide command replies; the log always has them.
+        foreach (var line in lines)
+        {
             command.ReplyToCommand($"[pets] {line}");
+            Logger.LogInformation("[pets] {Line}", line);
+        }
     }
 
     [ConsoleCommand(
