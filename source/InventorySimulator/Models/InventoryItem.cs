@@ -30,6 +30,9 @@ public class InventoryItem
     [JsonPropertyName("paint")]
     public int? Paint { get; set; }
 
+    [JsonPropertyName("petCoat")]
+    public int? PetCoat { get; set; }
+
     [JsonPropertyName("petId")]
     public int? PetId { get; set; }
 

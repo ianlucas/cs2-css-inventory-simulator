@@ -38,10 +38,19 @@ public static class CCSPlayerControllerExtensions
         _controllerStateManager.TryRemove(self.Index, out var _);
     }
 
+    public static IEnumerable<KeyValuePair<uint, CCSPlayerControllerState>> GetStates() =>
+        _controllerStateManager;
+
     public static void RemoveAllPets()
     {
         foreach (var controllerState in _controllerStateManager.Values)
             controllerState.RemovePet();
+    }
+
+    public static void ForgetAllPets()
+    {
+        foreach (var controllerState in _controllerStateManager.Values)
+            controllerState.ForgetPet();
     }
 
     public static void HandleConnect(this CCSPlayerController self)
@@ -118,7 +127,7 @@ public static class CCSPlayerControllerExtensions
             self.RegiveAgent(inventory, oldInventory);
             self.RegiveGloves(inventory, oldInventory);
             self.RegiveWeapons(inventory, oldInventory);
-            self.SpawnPet();
+            Pets.QueueSpawn(self);
         }
     }
 
@@ -126,7 +135,11 @@ public static class CCSPlayerControllerExtensions
     {
         var controllerState = self.GetState();
         var item = ConVars.IsPetsEnabled.Value ? controllerState.Inventory?.Pet : null;
-        if (item?.PetId == null)
+        if (
+            item?.PetId is not int petId
+            || !PetHelper.TryGetModel(petId, out var model)
+            || !self.CanHavePet()
+        )
         {
             controllerState.RemovePet();
             return;
@@ -154,22 +167,37 @@ public static class CCSPlayerControllerExtensions
             pet = Utilities.CreateEntityByName<CChicken>("chicken");
             if (pet == null)
                 return;
-            // A cached item view keeps its item ID, so the pet looks the same on every spawn.
-            var itemView = controllerState.GetEconItemView(
-                0,
-                (int)loadout_slot_t.LOADOUT_SLOT_PET,
-                item
-            );
-            Natives.CEconItemView_OperatorEquals.Invoke(pet.AttributeManager.Item.Handle, itemView);
-            pet.Teleport(position, angles, new Vector(0, 0, 0));
-            pet.DispatchSpawn();
-            Schema.SetSchemaValue(pet.Handle, "CChicken", "m_owner", self.EntityHandle.Raw);
-            Utilities.SetStateChanged(pet, "CChicken", "m_owner");
+            // Tracked before anything that can throw, so a failed spawn never leaves a chicken
+            // nobody owns; the name lets a later load of the plugin find it again.
             controllerState.PetHandle = pet.EntityHandle.Raw;
             controllerState.PetHash = item.Hash;
+            try
+            {
+                pet.Entity!.Name = PetHelper.GetTargetName(self.SteamID);
+                // A cached item view keeps its item ID, so the pet looks the same on every spawn.
+                var itemView = controllerState.GetEconItemView(
+                    0,
+                    (int)loadout_slot_t.LOADOUT_SLOT_PET,
+                    item
+                );
+                Natives.CEconItemView_OperatorEquals.Invoke(
+                    pet.AttributeManager.Item.Handle,
+                    itemView
+                );
+                pet.Teleport(position, angles, new Vector(0, 0, 0));
+                pet.DispatchSpawn();
+                Schema.SetSchemaValue(pet.Handle, "CChicken", "m_owner", self.EntityHandle.Raw);
+                Utilities.SetStateChanged(pet, "CChicken", "m_owner");
+            }
+            catch
+            {
+                controllerState.RemovePet();
+                throw;
+            }
         }
         else
             pet.Teleport(position, angles, new Vector(0, 0, 0));
+        pet.ApplyPetLook(model, PetHelper.GetMaterialGroup(petId, item.PetCoat ?? item.Seed));
         Schema.SetSchemaValue(pet.Handle, "CChicken", "m_leader", pawn.EntityHandle.Raw);
         Utilities.SetStateChanged(pet, "CChicken", "m_leader");
     }

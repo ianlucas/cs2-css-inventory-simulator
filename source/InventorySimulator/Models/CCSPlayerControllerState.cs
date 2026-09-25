@@ -56,7 +56,14 @@ public class CCSPlayerControllerState(ulong steamId)
 
     public void RemovePet()
     {
-        GetPet()?.Remove();
+        // The map's own teardown removes every entity; removing one again mid-teardown is unsafe.
+        if (!Pets.IsMapUnloading)
+            GetPet()?.Remove();
+        ForgetPet();
+    }
+
+    public void ForgetPet()
+    {
         PetHandle = null;
         PetHash = null;
     }

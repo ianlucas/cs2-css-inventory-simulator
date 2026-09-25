@@ -15,19 +15,34 @@ public partial class InventorySimulator
     {
         var player = @event.Userid;
         if (player != null && !player.IsBot)
-            Server.NextWorldUpdate(() =>
-            {
-                if (player.IsValid)
-                    player.SpawnPet();
-            });
+            Pets.QueueSpawn(player);
         return HookResult.Continue;
     }
 
     public HookResult OnPlayerTeam(EventPlayerTeam @event, GameEventInfo _)
     {
         var player = @event.Userid;
-        if (player != null && !player.IsBot && @event.Team <= (int)CsTeam.Spectator)
+        if (
+            player != null
+            && !player.IsBot
+            && (@event.Disconnect || @event.Team <= (int)CsTeam.Spectator)
+        )
             player.GetState().RemovePet();
+        return HookResult.Continue;
+    }
+
+    public HookResult OnRoundPrestart(EventRoundPrestart @event, GameEventInfo _)
+    {
+        Pets.Reconcile("round restart");
+        return HookResult.Continue;
+    }
+
+    // Mode plugins such as Retakes move players when the round starts; the pet follows them there.
+    public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo _)
+    {
+        foreach (var player in Utilities.GetPlayers())
+            if (player.CanHavePet())
+                Pets.QueueSpawn(player);
         return HookResult.Continue;
     }
 

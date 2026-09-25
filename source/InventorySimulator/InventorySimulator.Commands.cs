@@ -5,6 +5,7 @@
 
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
+using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 
 namespace InventorySimulator;
@@ -59,6 +60,19 @@ public partial class InventorySimulator
             }
             player.SprayGraffiti();
         }
+    }
+
+    [ConsoleCommand(
+        "css_invsim_pets",
+        "Lists every pet chicken with its owner and look; \"fix\" removes strays right away."
+    )]
+    [RequiresPermissions("@css/root")]
+    public void OnPetsCommand(CCSPlayerController? player, CommandInfo command)
+    {
+        if (command.GetArg(1) == "fix")
+            command.ReplyToCommand($"[pets] removed {Pets.Reconcile("css_invsim_pets fix")}");
+        foreach (var line in Pets.Describe())
+            command.ReplyToCommand($"[pets] {line}");
     }
 
     [ConsoleCommand(

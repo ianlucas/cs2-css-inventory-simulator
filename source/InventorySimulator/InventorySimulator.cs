@@ -6,6 +6,9 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Memory;
+using CounterStrikeSharp.API.Modules.Timers;
+using Microsoft.Extensions.Logging;
+using Timer = CounterStrikeSharp.API.Modules.Timers.Timer;
 
 namespace InventorySimulator;
 
@@ -22,6 +25,9 @@ public partial class InventorySimulator : BasePlugin
         ConVars.Initialize(this);
         RegisterListener<Listeners.OnEntityCreated>(OnEntityCreated);
         RegisterListener<Listeners.OnEntityDeleted>(OnEntityDeleted);
+        RegisterListener<Listeners.OnMapStart>(OnMapStart);
+        RegisterListener<Listeners.OnMapEnd>(OnMapEnd);
+        RegisterListener<Listeners.OnClientDisconnect>(OnClientDisconnect);
         RegisterEventHandler<EventPlayerConnect>(OnPlayerConnect, HookMode.Post);
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull, HookMode.Post);
         RegisterEventHandler<EventPlayerDeath>(OnPlayerDeathPre);
@@ -29,6 +35,8 @@ public partial class InventorySimulator : BasePlugin
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect, HookMode.Post);
         RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn, HookMode.Post);
         RegisterEventHandler<EventPlayerTeam>(OnPlayerTeam, HookMode.Post);
+        RegisterEventHandler<EventRoundPrestart>(OnRoundPrestart, HookMode.Post);
+        RegisterEventHandler<EventRoundStart>(OnRoundStart, HookMode.Post);
         VirtualFunctions.GiveNamedItemFunc.Hook(OnGiveNamedItemPre, HookMode.Pre);
         Natives.CCSPlayerInventory_GetItemInLoadout.Hook(GetItemInLoadout, HookMode.Post);
         ConVars.File.ValueChanged += OnFileChanged;
@@ -43,7 +51,13 @@ public partial class InventorySimulator : BasePlugin
         OnFileChanged(null, ConVars.File.Value);
         OnIsRequireInventoryChanged(null, ConVars.IsRequireInventory.Value);
         OnIsSprayOnUseChanged(null, ConVars.IsSprayOnUse.Value);
+        // Deathmatch and practice never restart a round, so strays are also swept on a timer.
+        _petsTimer = AddTimer(30, () => Pets.Reconcile("periodic check"), TimerFlags.REPEAT);
+        if (hotReload)
+            Server.NextWorldUpdate(() => Pets.Reconcile("plugin load"));
     }
+
+    private Timer? _petsTimer;
 
     private string _lastUrl = "";
     private bool _isActivatePlayerHooked = false;
@@ -103,16 +117,31 @@ public partial class InventorySimulator : BasePlugin
     public void OnIsPetsEnabledChanged(object? _, bool value)
     {
         if (!value)
+        {
             CCSPlayerControllerExtensions.RemoveAllPets();
+            Pets.Reconcile("pets disabled");
+        }
     }
 
     public override void Unload(bool hotReload)
     {
+        // Pets go first: an unhook that throws must not leave chickens behind.
+        try
+        {
+            _petsTimer?.Kill();
+            CCSPlayerControllerExtensions.RemoveAllPets();
+            foreach (var chicken in Pets.FindChickens())
+                if (chicken.IsTaggedPet())
+                    chicken.Remove();
+        }
+        catch (Exception error)
+        {
+            Logger.LogError("Could not remove pets on unload: {Message}", error.Message);
+        }
         VirtualFunctions.GiveNamedItemFunc.Unhook(OnGiveNamedItemPre, HookMode.Pre);
         Natives.CCSPlayerInventory_GetItemInLoadout.Unhook(GetItemInLoadout, HookMode.Post);
         OnIsRequireInventoryChanged(null, false);
         OnIsSprayOnUseChanged(null, false);
-        CCSPlayerControllerExtensions.RemoveAllPets();
         CCSPlayerControllerState.ClearAllEconItemView();
     }
 }

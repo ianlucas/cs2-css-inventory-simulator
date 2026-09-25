@@ -63,3 +63,8 @@ css_spray
 
 css_wslogin
     Authenticates the player with Inventory Simulator and displays their login URL.
+
+css_invsim_pets [fix]
+    Lists every pet chicken with its owner, model, coat and scale (requires @css/root).
+    "fix" removes stray pets right away; strays are also removed on every round restart and
+    every 30 seconds.

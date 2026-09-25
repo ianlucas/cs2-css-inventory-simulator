@@ -30,10 +30,34 @@ public partial class InventorySimulator
         }
     }
 
+    public void OnMapStart(string _)
+    {
+        Pets.IsMapUnloading = false;
+        CCSPlayerControllerExtensions.ForgetAllPets();
+    }
+
+    public void OnMapEnd()
+    {
+        Pets.IsMapUnloading = true;
+        CCSPlayerControllerExtensions.ForgetAllPets();
+    }
+
+    public void OnClientDisconnect(int slot)
+    {
+        Utilities.GetPlayerFromSlot(slot)?.GetState().RemovePet();
+    }
+
     public void OnEntityDeleted(CEntityInstance entity)
     {
         var designerName = entity.DesignerName;
-        if (designerName == "cs_player_controller")
+        if (designerName == "chicken")
+        {
+            var handle = entity.EntityHandle.Raw;
+            foreach (var (_, controllerState) in CCSPlayerControllerExtensions.GetStates())
+                if (controllerState.PetHandle == handle)
+                    controllerState.ForgetPet();
+        }
+        else if (designerName == "cs_player_controller")
         {
             var controller = entity.As<CCSPlayerController>();
             if (controller.SteamID != 0)
