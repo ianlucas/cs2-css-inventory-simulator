@@ -14,6 +14,7 @@ public class PlayerInventory(EquippedV5Response data)
     public Dictionary<byte, InventoryItem> Agents => _data.Agents;
     public InventoryItem? MusicKit => _data.MusicKit;
     public InventoryItem? Graffiti => _data.Graffiti;
+    public InventoryItem? Pet => _data.Pet;
 
     public Dictionary<(int paint, float wear), (ushort def, string stickers)> WeaponWearCache = [];
 

@@ -6,6 +6,7 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Utils;
 using Timer = CounterStrikeSharp.API.Modules.Timers.Timer;
 
 namespace InventorySimulator;
@@ -22,6 +23,8 @@ public class CCSPlayerControllerState(ulong steamId)
     public Timer? UseCmdTimer;
     public bool IsUseCmdBlocked = false;
     public Action? PostFetchCallback;
+    public uint? PetHandle;
+    public string? PetHash;
 
     private static readonly ConcurrentDictionary<
         (ulong SteamID, int Team, int Slot),
@@ -41,6 +44,21 @@ public class CCSPlayerControllerState(ulong steamId)
     {
         UseCmdTimer?.Kill();
         UseCmdTimer = null;
+    }
+
+    public CChicken? GetPet()
+    {
+        if (PetHandle == null)
+            return null;
+        var pet = new CHandle<CChicken>(PetHandle.Value).Value;
+        return pet != null && pet.IsValid && pet.DesignerName == "chicken" ? pet : null;
+    }
+
+    public void RemovePet()
+    {
+        GetPet()?.Remove();
+        PetHandle = null;
+        PetHash = null;
     }
 
     public nint GetEconItemView(int team, int slot, InventoryItem item, nint copyFrom = 0)

@@ -130,6 +130,12 @@ public static class ConVars
         0
     );
 
+    public static readonly FakeConVar<bool> IsPetsEnabled = new(
+        "invsim_pets_enabled",
+        "Spawn the player's equipped pet next to them every time they spawn.",
+        true
+    );
+
     public static void Initialize(BasePlugin plugin)
     {
         plugin.RegisterFakeConVars(typeof(ConVars));

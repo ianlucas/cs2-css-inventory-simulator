@@ -27,6 +27,8 @@ public partial class InventorySimulator : BasePlugin
         RegisterEventHandler<EventPlayerDeath>(OnPlayerDeathPre);
         RegisterEventHandler<EventRoundMvp>(OnRoundMvpPre);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect, HookMode.Post);
+        RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn, HookMode.Post);
+        RegisterEventHandler<EventPlayerTeam>(OnPlayerTeam, HookMode.Post);
         VirtualFunctions.GiveNamedItemFunc.Hook(OnGiveNamedItemPre, HookMode.Pre);
         Natives.CCSPlayerInventory_GetItemInLoadout.Hook(GetItemInLoadout, HookMode.Post);
         ConVars.File.ValueChanged += OnFileChanged;
@@ -36,6 +38,7 @@ public partial class InventorySimulator : BasePlugin
         ConVars.ApiKey.ValueChanged += OnApiSuspensionConVarChanged;
         ConVars.IsPublicApiStatTrakIncrement.ValueChanged += OnApiSuspensionConVarChanged;
         ConVars.IsPublicApiSprayConsume.ValueChanged += OnApiSuspensionConVarChanged;
+        ConVars.IsPetsEnabled.ValueChanged += OnIsPetsEnabledChanged;
         _lastUrl = ConVars.Url.Value;
         OnFileChanged(null, ConVars.File.Value);
         OnIsRequireInventoryChanged(null, ConVars.IsRequireInventory.Value);
@@ -97,12 +100,19 @@ public partial class InventorySimulator : BasePlugin
         _isProcessUsercmdsHooked = value;
     }
 
+    public void OnIsPetsEnabledChanged(object? _, bool value)
+    {
+        if (!value)
+            CCSPlayerControllerExtensions.RemoveAllPets();
+    }
+
     public override void Unload(bool hotReload)
     {
         VirtualFunctions.GiveNamedItemFunc.Unhook(OnGiveNamedItemPre, HookMode.Pre);
         Natives.CCSPlayerInventory_GetItemInLoadout.Unhook(GetItemInLoadout, HookMode.Post);
         OnIsRequireInventoryChanged(null, false);
         OnIsSprayOnUseChanged(null, false);
+        CCSPlayerControllerExtensions.RemoveAllPets();
         CCSPlayerControllerState.ClearAllEconItemView();
     }
 }

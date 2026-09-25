@@ -52,6 +52,9 @@ invsim_fallback_team false
 invsim_minmodels 0
     Enable player agents (0 = enabled, 1 = use map models per team, 2 = SAS & Phoenix).
 
+invsim_pets_enabled true
+    Spawn the player's equipped pet next to them every time they spawn.
+
 css_ws
     Refreshes player inventory from the Inventory Simulator service and displays the configured URL.
 

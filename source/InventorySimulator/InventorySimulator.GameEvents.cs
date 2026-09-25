@@ -3,12 +3,34 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Utils;
 
 namespace InventorySimulator;
 
 public partial class InventorySimulator
 {
+    public HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo _)
+    {
+        var player = @event.Userid;
+        if (player != null && !player.IsBot)
+            Server.NextWorldUpdate(() =>
+            {
+                if (player.IsValid)
+                    player.SpawnPet();
+            });
+        return HookResult.Continue;
+    }
+
+    public HookResult OnPlayerTeam(EventPlayerTeam @event, GameEventInfo _)
+    {
+        var player = @event.Userid;
+        if (player != null && !player.IsBot && @event.Team <= (int)CsTeam.Spectator)
+            player.GetState().RemovePet();
+        return HookResult.Continue;
+    }
+
     public HookResult OnPlayerConnect(EventPlayerConnect @event, GameEventInfo _)
     {
         var player = @event.Userid;

@@ -6,6 +6,8 @@
 using System.Collections.Concurrent;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Memory;
+using CounterStrikeSharp.API.Modules.Utils;
 
 namespace InventorySimulator;
 
@@ -31,8 +33,15 @@ public static class CCSPlayerControllerExtensions
     {
         var controllerState = self.GetState();
         controllerState.DisposeUseCmdTimer();
+        controllerState.RemovePet();
         controllerState.ClearEconItemView();
         _controllerStateManager.TryRemove(self.Index, out var _);
+    }
+
+    public static void RemoveAllPets()
+    {
+        foreach (var controllerState in _controllerStateManager.Values)
+            controllerState.RemovePet();
     }
 
     public static void HandleConnect(this CCSPlayerController self)
@@ -109,7 +118,60 @@ public static class CCSPlayerControllerExtensions
             self.RegiveAgent(inventory, oldInventory);
             self.RegiveGloves(inventory, oldInventory);
             self.RegiveWeapons(inventory, oldInventory);
+            self.SpawnPet();
         }
+    }
+
+    public static void SpawnPet(this CCSPlayerController self)
+    {
+        var controllerState = self.GetState();
+        var item = ConVars.IsPetsEnabled.Value ? controllerState.Inventory?.Pet : null;
+        if (item?.PetId == null)
+        {
+            controllerState.RemovePet();
+            return;
+        }
+        var pawn = self.PlayerPawn.Value;
+        if (
+            pawn == null
+            || !pawn.IsValid
+            || pawn.LifeState != (byte)LifeState_t.LIFE_ALIVE
+            || pawn.AbsOrigin == null
+        )
+            return;
+        var yaw = pawn.EyeAngles.Y;
+        var behind = (yaw + 180) * MathF.PI / 180;
+        var position = new Vector(
+            pawn.AbsOrigin.X + MathF.Cos(behind) * 48,
+            pawn.AbsOrigin.Y + MathF.Sin(behind) * 48,
+            pawn.AbsOrigin.Z + 8
+        );
+        var angles = new QAngle(0, yaw, 0);
+        var pet = controllerState.GetPet();
+        if (pet == null || item.Hash == null || controllerState.PetHash != item.Hash)
+        {
+            controllerState.RemovePet();
+            pet = Utilities.CreateEntityByName<CChicken>("chicken");
+            if (pet == null)
+                return;
+            // A cached item view keeps its item ID, so the pet looks the same on every spawn.
+            var itemView = controllerState.GetEconItemView(
+                0,
+                (int)loadout_slot_t.LOADOUT_SLOT_PET,
+                item
+            );
+            Natives.CEconItemView_OperatorEquals.Invoke(pet.AttributeManager.Item.Handle, itemView);
+            pet.Teleport(position, angles, new Vector(0, 0, 0));
+            pet.DispatchSpawn();
+            Schema.SetSchemaValue(pet.Handle, "CChicken", "m_owner", self.EntityHandle.Raw);
+            Utilities.SetStateChanged(pet, "CChicken", "m_owner");
+            controllerState.PetHandle = pet.EntityHandle.Raw;
+            controllerState.PetHash = item.Hash;
+        }
+        else
+            pet.Teleport(position, angles, new Vector(0, 0, 0));
+        Schema.SetSchemaValue(pet.Handle, "CChicken", "m_leader", pawn.EntityHandle.Raw);
+        Utilities.SetStateChanged(pet, "CChicken", "m_leader");
     }
 
     public static bool IsUseCmdBusy(this CCSPlayerController self)
@@ -452,6 +514,7 @@ public static class CCSPlayerControllerExtensions
 
     public static void HandleDisconnect(this CCSPlayerController self)
     {
+        self.GetState().RemovePet();
         if (!ConVars.IsPersistInventory.Value && !Inventories.Has(self.SteamID))
             self.GetState().Inventory = null;
     }
