@@ -25,6 +25,14 @@ public partial class InventorySimulator
         return HookResult.Continue;
     }
 
+    public HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo _)
+    {
+        var player = @event.Userid;
+        if (player != null && !player.IsBot)
+            player.HandleSpawn();
+        return HookResult.Continue;
+    }
+
     public HookResult OnPlayerDeathPre(EventPlayerDeath @event, GameEventInfo _)
     {
         var attacker = @event.Attacker;

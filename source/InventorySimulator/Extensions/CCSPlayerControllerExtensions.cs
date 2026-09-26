@@ -112,6 +112,18 @@ public static class CCSPlayerControllerExtensions
         }
     }
 
+    public static void HandleSpawn(this CCSPlayerController self)
+    {
+        Server.NextWorldUpdate(() =>
+        {
+            if (!self.IsValid)
+                return;
+            var gloves = self.GetState()
+                .Inventory?.GetGloves(self.TeamNum, ConVars.IsFallbackTeam.Value);
+            self.PlayerPawn.Value?.RefreshGloves(gloves != null);
+        });
+    }
+
     public static bool IsUseCmdBusy(this CCSPlayerController self)
     {
         if (self.PlayerPawn.Value?.IsBuyMenuOpen == true)
@@ -168,7 +180,13 @@ public static class CCSPlayerControllerExtensions
             return;
         pawn.SetModelFromLoadout();
         pawn.SetModelFromClass();
-        pawn.AcceptInput("SetBodygroup", value: "default_gloves,1");
+        var itemServices = pawn.ItemServices?.As<CCSPlayer_ItemServices>();
+        if (itemServices != null)
+            pawn.AcceptInput(
+                "SetBodygroup",
+                value: $"defusekit,{(itemServices.HasDefuser ? 1 : 0)}"
+            );
+        pawn.RefreshGloves(inventory.GetGloves(teamNum, ConVars.IsFallbackTeam.Value) != null);
     }
 
     public static void RegiveGloves(
@@ -178,8 +196,7 @@ public static class CCSPlayerControllerExtensions
     )
     {
         var pawn = self.PlayerPawn.Value;
-        var itemServices = pawn?.ItemServices?.As<CCSPlayer_ItemServices>();
-        if (pawn == null || itemServices == null)
+        if (pawn == null || pawn.ItemServices == null)
             return;
         var isFallbackTeam = ConVars.IsFallbackTeam.Value;
         var teamNum = self.TeamNum;
@@ -187,14 +204,7 @@ public static class CCSPlayerControllerExtensions
         var oldItem = oldInventory?.GetGloves(teamNum, isFallbackTeam);
         if (oldItem == item)
             return;
-        itemServices.UpdateWearables();
-        // Thanks to @samyycX.
-        pawn.AcceptInput("SetBodygroup", value: "first_or_third_person,0");
-        Server.NextWorldUpdate(() =>
-        {
-            if (pawn.IsValid && itemServices.Handle != nint.Zero)
-                pawn.AcceptInput("SetBodygroup", value: "first_or_third_person,1");
-        });
+        pawn.RefreshGloves(item != null);
     }
 
     public static void RegiveWeapons(
