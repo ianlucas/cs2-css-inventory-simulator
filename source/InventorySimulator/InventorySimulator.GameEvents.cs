@@ -44,6 +44,18 @@ public partial class InventorySimulator
         return HookResult.Continue;
     }
 
+    public HookResult OnRoundEndPre(EventRoundEnd @event, GameEventInfo _)
+    {
+        Pets.SuppressRoundEndTricks();
+        return HookResult.Continue;
+    }
+
+    public HookResult OnRoundEndPost(EventRoundEnd @event, GameEventInfo _)
+    {
+        Pets.RestoreRoundEndActivities();
+        return HookResult.Continue;
+    }
+
     public HookResult OnPlayerConnect(EventPlayerConnect @event, GameEventInfo _)
     {
         var player = @event.Userid;

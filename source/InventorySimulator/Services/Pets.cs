@@ -5,6 +5,7 @@
 
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Utils;
 using Microsoft.Extensions.Logging;
 
@@ -67,11 +68,14 @@ public static class Pets
         Utilities
             .FindAllEntitiesByDesignerName<CChicken>("chicken")
             .Where(chicken =>
-                chicken.IsValid && chicken.DesignerName == "chicken" && !chicken.IsMarkedForDeletion()
+                chicken.IsValid
+                && chicken.DesignerName == "chicken"
+                && !chicken.IsMarkedForDeletion()
             )
             .ToList();
 
-    public static bool IsTaggedPet(this CChicken self) => PetHelper.IsPetTargetName(self.Entity?.Name);
+    public static bool IsTaggedPet(this CChicken self) =>
+        PetHelper.IsPetTargetName(self.Entity?.Name);
 
     // Keeps exactly the pets of players who may have one and removes every other chicken this
     // plugin created, including ones an earlier load of the plugin lost track of.
@@ -80,6 +84,59 @@ public static class Pets
         foreach (var player in Utilities.GetPlayers())
             if (player.CanHavePet())
                 QueueSpawn(player);
+    }
+
+    // Pet sounds are client-side events in the trick animations and play at full volume across the
+    // whole map. CS2 starts a trick for every pet whose owner wins a round and after anyone presses
+    // E on a pet, so tricks are cancelled: a turn in place may finish but falls back to idle
+    // instead of the trick it queues.
+    public static void CancelTricks()
+    {
+        if (IsMapUnloading || IsUnloaded || !ConVars.IsPetsEnabled.Value)
+            return;
+        foreach (var (_, state) in CCSPlayerControllerExtensions.GetStates())
+        {
+            var pet = state.GetPet();
+            if (pet == null)
+                continue;
+            if (pet.CurrentActivity is not (EChickenActivity.Trick or EChickenActivity.TurnInPlace))
+                continue;
+            pet.DesiredActivity = EChickenActivity.Idle;
+            if (pet.CurrentActivity == EChickenActivity.Trick)
+            {
+                var graph = pet.MainGraphController.Controller?.As<CCS2ChickenGraphController>();
+                if (graph != null)
+                    graph.HasActionCompletedEvent = true;
+            }
+        }
+    }
+
+    // The native round_end listener skips pets that are already tricking. Mark them as tricking
+    // while the event is dispatched and restore their activity afterwards.
+    private static readonly List<(CChicken Pet, EChickenActivity Activity)> _roundEndActivities =
+    [];
+
+    public static void SuppressRoundEndTricks()
+    {
+        _roundEndActivities.Clear();
+        if (IsMapUnloading || IsUnloaded)
+            return;
+        foreach (var (_, state) in CCSPlayerControllerExtensions.GetStates())
+        {
+            var pet = state.GetPet();
+            if (pet == null || pet.CurrentActivity == EChickenActivity.Trick)
+                continue;
+            _roundEndActivities.Add((pet, pet.CurrentActivity));
+            pet.CurrentActivity = EChickenActivity.Trick;
+        }
+    }
+
+    public static void RestoreRoundEndActivities()
+    {
+        foreach (var (pet, activity) in _roundEndActivities)
+            if (pet.IsValid && pet.CurrentActivity == EChickenActivity.Trick)
+                pet.CurrentActivity = activity;
+        _roundEndActivities.Clear();
     }
 
     public static int Reconcile(string reason)

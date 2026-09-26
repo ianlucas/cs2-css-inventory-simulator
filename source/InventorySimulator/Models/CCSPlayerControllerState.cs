@@ -51,7 +51,11 @@ public class CCSPlayerControllerState(ulong steamId)
         if (PetHandle == null)
             return null;
         var pet = new CHandle<CChicken>(PetHandle.Value).Value;
-        return pet != null && pet.IsValid && pet.DesignerName == "chicken" && !pet.IsMarkedForDeletion()
+        return
+            pet != null
+            && pet.IsValid
+            && pet.DesignerName == "chicken"
+            && !pet.IsMarkedForDeletion()
             ? pet
             : null;
     }

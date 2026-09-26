@@ -28,6 +28,7 @@ public partial class InventorySimulator : BasePlugin
         RegisterListener<Listeners.OnMapStart>(OnMapStart);
         RegisterListener<Listeners.OnMapEnd>(OnMapEnd);
         RegisterListener<Listeners.OnClientDisconnect>(OnClientDisconnect);
+        RegisterListener<Listeners.OnTick>(Pets.CancelTricks);
         RegisterEventHandler<EventPlayerConnect>(OnPlayerConnect, HookMode.Post);
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull, HookMode.Post);
         RegisterEventHandler<EventPlayerDeath>(OnPlayerDeathPre);
@@ -37,6 +38,8 @@ public partial class InventorySimulator : BasePlugin
         RegisterEventHandler<EventPlayerTeam>(OnPlayerTeam, HookMode.Post);
         RegisterEventHandler<EventRoundPrestart>(OnRoundPrestart, HookMode.Post);
         RegisterEventHandler<EventRoundStart>(OnRoundStart, HookMode.Post);
+        RegisterEventHandler<EventRoundEnd>(OnRoundEndPre, HookMode.Pre);
+        RegisterEventHandler<EventRoundEnd>(OnRoundEndPost, HookMode.Post);
         VirtualFunctions.GiveNamedItemFunc.Hook(OnGiveNamedItemPre, HookMode.Pre);
         Natives.CCSPlayerInventory_GetItemInLoadout.Hook(GetItemInLoadout, HookMode.Post);
         ConVars.File.ValueChanged += OnFileChanged;
