@@ -16,6 +16,9 @@ public static class CCSPlayerControllerExtensions
         CCSPlayerControllerState
     > _controllerStateManager = [];
 
+    public static IEnumerable<CCSPlayerControllerState> GetAllStates() =>
+        _controllerStateManager.Values;
+
     public static CCSPlayerControllerState GetState(this CCSPlayerController self)
     {
         return _controllerStateManager.GetOrAdd(self.Index, _ => new(self.SteamID));
@@ -71,7 +74,6 @@ public static class CCSPlayerControllerExtensions
     public static async Task FetchInventory(this CCSPlayerController self, bool force = false)
     {
         var controllerState = self.GetState();
-        var existing = controllerState.Inventory;
         if (!force && controllerState.Inventory != null)
             return;
         if (controllerState.IsFetching)
@@ -81,8 +83,6 @@ public static class CCSPlayerControllerExtensions
         if (response != null)
         {
             var inventory = new PlayerInventory(response);
-            if (existing != null)
-                inventory.WeaponWearCache = existing.WeaponWearCache;
             inventory.InitializeWearOverrides();
             controllerState.WsUpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             controllerState.Inventory = inventory;
