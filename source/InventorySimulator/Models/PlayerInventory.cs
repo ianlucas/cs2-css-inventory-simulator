@@ -15,18 +15,15 @@ public class PlayerInventory(EquippedV5Response data)
     public InventoryItem? MusicKit => _data.MusicKit;
     public InventoryItem? Graffiti => _data.Graffiti;
 
-    public Dictionary<(int paint, float wear), (ushort def, string stickers)> WeaponWearCache = [];
-
     public static PlayerInventory Empty() => new(new());
+
+    public IEnumerable<InventoryItem> GetAllWeapons() =>
+        _data.Knives.Values.Concat(_data.CTWeapons.Values).Concat(_data.TWeapons.Values);
 
     public void InitializeWearOverrides()
     {
-        foreach (var knife in _data.Knives.Values)
-            knife.WearOverride = GetWeaponWear(knife);
-        foreach (var weapon in _data.CTWeapons.Values)
-            weapon.WearOverride = GetWeaponWear(weapon);
-        foreach (var weapon in _data.TWeapons.Values)
-            weapon.WearOverride = GetWeaponWear(weapon);
+        foreach (var item in GetAllWeapons())
+            item.WearOverride = WearRegistry.Resolve(item);
     }
 
     public InventoryItem? GetKnife(byte team, bool fallback)
@@ -59,32 +56,6 @@ public class PlayerInventory(EquippedV5Response data)
         if (fallback && _data.Gloves.TryGetValue(TeamHelper.ToggleTeam(team), out glove))
             return glove;
         return null;
-    }
-
-    // It looks like CS2's client caches the weapon materials based on wear and seed. Until we figure out
-    // the proper way to force a material update, we need to ensure that every paint has a unique wear so
-    // that: 1) it gets regenerated, and 2) there are no rendering issues. As a drawback, every time
-    // players use !ws, their weapon's wear will decay, but I think it's a good trade-off since it also
-    // forces the sticker to regenerate. This approach is based on workarounds by @stefanx111 and @bklol.
-    private float GetWeaponWear(InventoryItem item)
-    {
-        if (item is not { Def: not null, Paint: not null, Wear: not null, Stickers: not null })
-            return 0;
-        var def = item.Def.Value;
-        var paint = item.Paint.Value;
-        var wear = item.Wear.Value;
-        var stickers = string.Join(
-            "_",
-            item.Stickers.OrderBy(s => s.Slot)
-                .Select(s => $"{s.Slot}:{s.Def}:{s.Schema}:{s.Wear}:{s.Rotation}:{s.X}:{s.Y}")
-        );
-        while (
-            WeaponWearCache.TryGetValue((paint, wear), out var cached)
-            && (cached.def != def || cached.stickers != stickers)
-        )
-            wear += 0.001f;
-        WeaponWearCache[(paint, wear)] = (def, stickers);
-        return wear;
     }
 
     public InventoryItem? GetItemForSlot(

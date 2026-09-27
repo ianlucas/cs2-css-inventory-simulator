@@ -22,6 +22,7 @@ public partial class InventorySimulator : BasePlugin
         ConVars.Initialize(this);
         RegisterListener<Listeners.OnEntityCreated>(OnEntityCreated);
         RegisterListener<Listeners.OnEntityDeleted>(OnEntityDeleted);
+        RegisterListener<Listeners.OnMapStart>(OnMapStart);
         RegisterEventHandler<EventPlayerConnect>(OnPlayerConnect, HookMode.Post);
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull, HookMode.Post);
         RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn, HookMode.Post);
