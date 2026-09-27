@@ -48,7 +48,17 @@ public class InventoryItem
     [JsonPropertyName("wear")]
     public float? Wear { get; set; }
 
-    public float? WearOverride { get; set; }
+    public float? WearOverride
+    {
+        get;
+        set
+        {
+            if (field == value)
+                return;
+            field = value;
+            _attributesCache = null;
+        }
+    }
 
     private (int? statTrak, List<(string, float)> attributes)? _attributesCache;
 

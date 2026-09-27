@@ -31,16 +31,23 @@ public static class Inventories
             if (path == null)
                 return false;
             string json = File.ReadAllText(path);
-            var inventories = JsonSerializer.Deserialize<Dictionary<ulong, PlayerInventory>>(json);
+            var inventories = JsonSerializer.Deserialize<Dictionary<ulong, EquippedV5Response?>>(
+                json
+            );
             _loadedInventories.Clear();
             if (inventories != null)
-                foreach (var pair in inventories)
-                    _loadedInventories.TryAdd(pair.Key, pair.Value);
+                foreach (var (steamId, data) in inventories)
+                    if (data != null)
+                        _loadedInventories.TryAdd(steamId, new PlayerInventory(data));
             return true;
         }
-        catch
+        catch (Exception exception)
         {
-            Runtime.Plugin.Logger.LogError("Error when processing \"{File}\".", filename);
+            Runtime.Plugin.Logger.LogError(
+                exception,
+                "Error when processing \"{File}\".",
+                filename
+            );
             return false;
         }
     }
@@ -54,6 +61,7 @@ public static class Inventories
     {
         if (_loadedInventories.TryGetValue(steamId, out var value))
         {
+            value.InitializeWearOverrides();
             inventory = value;
             return true;
         }
@@ -63,6 +71,6 @@ public static class Inventories
 
     public static PlayerInventory? Get(ulong steamId)
     {
-        return _loadedInventories.TryGetValue(steamId, out var inventory) ? inventory : null;
+        return TryGet(steamId, out var inventory) ? inventory : null;
     }
 }
