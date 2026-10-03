@@ -19,4 +19,11 @@ public static partial class Natives
     > CCSPlayerController_ProcessUsercmds = new(
         GameData.GetSignature("CCSPlayerController::ProcessUsercmds")
     );
+
+    public static readonly MemoryFunctionWithReturn<nint, nint> CCSPlayerController_GetPetChicken =
+        new(GameData.GetSignature("CCSPlayerController::GetPetChicken"));
+
+    public static readonly MemoryFunctionVoid<nint, nint> CCSPlayerController_SetPetChicken = new(
+        GameData.GetSignature("CCSPlayerController::SetPetChicken")
+    );
 }

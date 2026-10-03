@@ -130,6 +130,24 @@ public static class ConVars
         0
     );
 
+    public static readonly FakeConVar<bool> IsPetEnabled = new(
+        "invsim_pet_enabled",
+        "Allow players' pets to spawn.",
+        true
+    );
+
+    public static readonly FakeConVar<bool> IsPetImmortal = new(
+        "invsim_pet_immortal",
+        "Prevent players' pets from taking damage.",
+        false
+    );
+
+    public static readonly FakeConVar<bool> IsPetFreeRoam = new(
+        "invsim_pet_free_roam",
+        "Allow players' pets to keep roaming after freeze time ends.",
+        false
+    );
+
     public static void Initialize(BasePlugin plugin)
     {
         plugin.RegisterFakeConVars(typeof(ConVars));

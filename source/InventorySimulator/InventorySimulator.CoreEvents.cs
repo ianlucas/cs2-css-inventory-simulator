@@ -41,6 +41,26 @@ public partial class InventorySimulator
         }
     }
 
+    public void OnEntitySpawned(CEntityInstance entity)
+    {
+        var designerName = entity.DesignerName;
+        if (designerName == "chicken")
+        {
+            Server.NextWorldUpdate(() =>
+            {
+                var chicken = entity.As<CChicken>();
+                if (!chicken.IsValid)
+                    return;
+                var controller = chicken.Owner.Value;
+                if (controller == null || controller.SteamID == 0)
+                    return;
+                var item = controller.GetState().Inventory?.Pet;
+                if (item != null)
+                    chicken.ApplyPetStyle(item);
+            });
+        }
+    }
+
     public void OnEntityDeleted(CEntityInstance entity)
     {
         var designerName = entity.DesignerName;
@@ -50,5 +70,14 @@ public partial class InventorySimulator
             if (controller.SteamID != 0)
                 controller.RemoveState();
         }
+    }
+
+    public HookResult OnEntityTakeDamagePre(CBaseEntity entity, CTakeDamageInfo info)
+    {
+        if (!ConVars.IsPetImmortal.Value)
+            return HookResult.Continue;
+        if (entity.DesignerName != "chicken" || entity.As<CChicken>().Owner.Value == null)
+            return HookResult.Continue;
+        return HookResult.Handled;
     }
 }

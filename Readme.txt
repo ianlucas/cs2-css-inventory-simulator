@@ -52,6 +52,15 @@ invsim_fallback_team false
 invsim_minmodels 0
     Enable player agents (0 = enabled, 1 = use map models per team, 2 = SAS & Phoenix).
 
+invsim_pet_enabled true
+    Allow players' pets to spawn.
+
+invsim_pet_immortal false
+    Prevent players' pets from taking damage.
+
+invsim_pet_free_roam false
+    Allow players' pets to keep roaming after freeze time ends.
+
 css_ws
     Refreshes player inventory from the Inventory Simulator service and displays the configured URL.
 
