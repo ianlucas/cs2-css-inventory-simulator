@@ -33,8 +33,7 @@ public static class CEconItemViewExtensions
             self.EntityQuality = 3;
         else
             self.EntityQuality = item.Stattrak >= 0 ? 9 : 4;
-        if (item.Nametag != null)
-            self.CustomName = item.Nametag;
+        self.CustomName = item.Nametag ?? "";
         var customAttrs = item.GetAttributes();
         var attrs = self.NetworkedDynamicAttributes;
         attrs.Attributes.RemoveAll();

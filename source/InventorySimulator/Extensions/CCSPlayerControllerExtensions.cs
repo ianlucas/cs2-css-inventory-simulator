@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 using System.Collections.Concurrent;
+using System.Numerics;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 
@@ -109,6 +110,7 @@ public static class CCSPlayerControllerExtensions
             self.RegiveAgent(inventory, oldInventory);
             self.RegiveGloves(inventory, oldInventory);
             self.RegiveWeapons(inventory, oldInventory);
+            self.RegivePet(inventory, oldInventory);
         }
     }
 
@@ -205,6 +207,31 @@ public static class CCSPlayerControllerExtensions
         if (oldItem == item)
             return;
         pawn.RefreshGloves(item != null);
+    }
+
+    public static void RegivePet(
+        this CCSPlayerController self,
+        PlayerInventory inventory,
+        PlayerInventory? oldInventory
+    )
+    {
+        if (!ConVars.IsPetEnabled.Value)
+            return;
+        if (oldInventory?.Pet == inventory.Pet)
+            return;
+        var chicken = self.GetPetChicken();
+        if (chicken == null || chicken.LifeState != (byte)LifeState_t.LIFE_ALIVE)
+            return;
+        var sceneNode = chicken.CBodyComponent?.SceneNode;
+        if (sceneNode == null)
+            return;
+        var position = (Vector3)sceneNode.AbsOrigin;
+        var angles = (Vector3)sceneNode.AbsRotation;
+        var canRoam = chicken.CanRoam();
+        chicken.Remove();
+        // The client only applies the pet's look when the chicken is created.
+        var pet = CChicken.CreatePet(self, position, angles);
+        pet?.SetCanRoam(canRoam);
     }
 
     public static void RegiveWeapons(
@@ -464,5 +491,16 @@ public static class CCSPlayerControllerExtensions
     {
         if (!ConVars.IsPersistInventory.Value && !Inventories.Has(self.SteamID))
             self.GetState().Inventory = null;
+    }
+
+    public static CChicken? GetPetChicken(this CCSPlayerController self)
+    {
+        var ptr = Natives.CCSPlayerController_GetPetChicken.Invoke(self.Handle);
+        return ptr != nint.Zero ? new CChicken(ptr) : null;
+    }
+
+    public static void SetPetChicken(this CCSPlayerController self, CChicken chicken)
+    {
+        Natives.CCSPlayerController_SetPetChicken.Invoke(self.Handle, chicken.Handle);
     }
 }

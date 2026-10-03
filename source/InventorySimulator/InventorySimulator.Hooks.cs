@@ -78,6 +78,12 @@ public partial class InventorySimulator
 
     public HookResult GetItemInLoadout(DynamicHook hook)
     {
+        var slot = hook.GetParam<int>(2);
+        if (slot == (int)loadout_slot_t.LOADOUT_SLOT_PET && !ConVars.IsPetEnabled.Value)
+        {
+            hook.SetReturn(SchemaHelper.GetEmptyCEconItemView());
+            return HookResult.Changed;
+        }
         var inventory = new CCSPlayerInventory(hook.GetParam<nint>(0));
         if (!inventory.IsValid)
             return HookResult.Continue;
@@ -89,7 +95,6 @@ public partial class InventorySimulator
         if (player == null)
             return HookResult.Continue;
         var team = hook.GetParam<int>(1);
-        var slot = hook.GetParam<int>(2);
         var controllerState = player.GetState();
         var item = controllerState.Inventory?.GetItemForSlot(
             (byte)team,
@@ -102,6 +107,19 @@ public partial class InventorySimulator
         {
             hook.SetReturn(controllerState.GetEconItemView(team, slot, item, itemView.Handle));
             return HookResult.Changed;
+        }
+        return HookResult.Continue;
+    }
+
+    public HookResult OnChickenManagerServerGamePostSimulate(DynamicHook hook)
+    {
+        if (!ConVars.IsPetFreeRoam.Value)
+            return HookResult.Continue;
+        foreach (var player in Utilities.GetPlayers())
+        {
+            var chicken = player.GetPetChicken();
+            if (chicken != null && !chicken.CanRoam())
+                chicken.SetCanRoam(true);
         }
         return HookResult.Continue;
     }

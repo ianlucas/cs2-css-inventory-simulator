@@ -14,6 +14,7 @@ public class PlayerInventory(EquippedV5Response data)
     public Dictionary<byte, InventoryItem> Agents => _data.Agents;
     public InventoryItem? MusicKit => _data.MusicKit;
     public InventoryItem? Graffiti => _data.Graffiti;
+    public InventoryItem? Pet => _data.Pet;
 
     public static PlayerInventory Empty() => new(new());
 
@@ -93,6 +94,8 @@ public class PlayerInventory(EquippedV5Response data)
             return _data.Collectible;
         if (slot == loadout_slot_t.LOADOUT_SLOT_MUSICKIT)
             return _data.MusicKit;
+        if (slot == loadout_slot_t.LOADOUT_SLOT_PET)
+            return _data.Pet;
         return null;
     }
 
