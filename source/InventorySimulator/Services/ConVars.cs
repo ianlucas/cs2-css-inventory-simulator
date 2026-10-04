@@ -150,13 +150,13 @@ public static class ConVars
 
     public static readonly FakeConVar<bool> IsPetRespawn = new(
         "invsim_pet_respawn",
-        "Spawn players' pets when they spawn and their pet isn't alive, and let them roam during warmup.",
+        "Give players a new pet when they spawn without a living one.",
         false
     );
 
     public static readonly FakeConVar<bool> IsPetRespawnWarmupOnly = new(
         "invsim_pet_respawn_warmup_only",
-        "Only apply invsim_pet_respawn during warmup.",
+        "Only respawn pets during warmup.",
         true
     );
 
