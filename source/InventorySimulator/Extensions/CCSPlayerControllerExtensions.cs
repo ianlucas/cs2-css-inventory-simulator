@@ -123,6 +123,7 @@ public static class CCSPlayerControllerExtensions
             var gloves = self.GetState()
                 .Inventory?.GetGloves(self.TeamNum, ConVars.IsFallbackTeam.Value);
             self.PlayerPawn.Value?.RefreshGloves(gloves != null);
+            self.RespawnPet();
         });
     }
 
@@ -232,6 +233,22 @@ public static class CCSPlayerControllerExtensions
         // The client only applies the pet's look when the chicken is created.
         var pet = CChicken.CreatePet(self, position, angles);
         pet?.SetCanRoam(canRoam);
+    }
+
+    public static void RespawnPet(this CCSPlayerController self)
+    {
+        if (!ConVars.IsPetRespawn.Value || !ConVars.IsPetEnabled.Value)
+            return;
+        if (ConVars.IsPetRespawnWarmupOnly.Value && !EntityHelper.IsWarmupPeriod())
+            return;
+        var chicken = self.GetPetChicken();
+        if (chicken != null && chicken.LifeState == (byte)LifeState_t.LIFE_ALIVE)
+            return;
+        // The game spawns pets at a random spot near their team's spawn points, or anywhere
+        // on the map in deathmatch.
+        var position = EntityHelper.GetRandomSpawnPoint(self.TeamNum)?.AbsOrigin;
+        if (position != null)
+            CChicken.CreatePet(self, (Vector3)position, null);
     }
 
     public static void RegiveWeapons(

@@ -36,7 +36,8 @@ public partial class InventorySimulator : BasePlugin
         ConVars.IsRequireInventory.ValueChanged += OnIsRequireInventoryChanged;
         ConVars.IsSprayOnUse.ValueChanged += OnIsSprayOnUseChanged;
         ConVars.IsPetImmortal.ValueChanged += OnIsPetImmortalChanged;
-        ConVars.IsPetFreeRoam.ValueChanged += OnIsPetFreeRoamChanged;
+        ConVars.IsPetFreeRoam.ValueChanged += OnPetRoamConVarChanged;
+        ConVars.IsPetRespawn.ValueChanged += OnPetRoamConVarChanged;
         ConVars.Url.ValueChanged += OnUrlChanged;
         ConVars.ApiKey.ValueChanged += OnApiSuspensionConVarChanged;
         ConVars.IsPublicApiStatTrakIncrement.ValueChanged += OnApiSuspensionConVarChanged;
@@ -46,7 +47,7 @@ public partial class InventorySimulator : BasePlugin
         OnIsRequireInventoryChanged(null, ConVars.IsRequireInventory.Value);
         OnIsSprayOnUseChanged(null, ConVars.IsSprayOnUse.Value);
         OnIsPetImmortalChanged(null, ConVars.IsPetImmortal.Value);
-        OnIsPetFreeRoamChanged(null, ConVars.IsPetFreeRoam.Value);
+        OnPetRoamChanged(ConVars.IsPetFreeRoam.Value || ConVars.IsPetRespawn.Value);
     }
 
     private string _lastUrl = "";
@@ -117,7 +118,12 @@ public partial class InventorySimulator : BasePlugin
         _isTakeDamageHooked = value;
     }
 
-    public void OnIsPetFreeRoamChanged(object? _, bool value)
+    public void OnPetRoamConVarChanged(object? _, bool __)
+    {
+        OnPetRoamChanged(ConVars.IsPetFreeRoam.Value || ConVars.IsPetRespawn.Value);
+    }
+
+    public void OnPetRoamChanged(bool value)
     {
         if (value == _isChickenManagerPostSimulateHooked)
             return;
@@ -141,7 +147,7 @@ public partial class InventorySimulator : BasePlugin
         OnIsRequireInventoryChanged(null, false);
         OnIsSprayOnUseChanged(null, false);
         OnIsPetImmortalChanged(null, false);
-        OnIsPetFreeRoamChanged(null, false);
+        OnPetRoamChanged(false);
         CCSPlayerControllerState.ClearAllEconItemView();
         SchemaHelper.FreeEmptyCEconItemView();
     }

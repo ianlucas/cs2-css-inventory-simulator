@@ -148,6 +148,18 @@ public static class ConVars
         false
     );
 
+    public static readonly FakeConVar<bool> IsPetRespawn = new(
+        "invsim_pet_respawn",
+        "Spawn players' pets when they spawn and their pet isn't alive, and let them roam during warmup.",
+        false
+    );
+
+    public static readonly FakeConVar<bool> IsPetRespawnWarmupOnly = new(
+        "invsim_pet_respawn_warmup_only",
+        "Only apply invsim_pet_respawn during warmup.",
+        true
+    );
+
     public static void Initialize(BasePlugin plugin)
     {
         plugin.RegisterFakeConVars(typeof(ConVars));

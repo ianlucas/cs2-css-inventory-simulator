@@ -61,6 +61,12 @@ invsim_pet_immortal false
 invsim_pet_free_roam false
     Allow players' pets to keep roaming after freeze time ends.
 
+invsim_pet_respawn false
+    Spawn players' pets when they spawn and their pet isn't alive, and let them roam during warmup.
+
+invsim_pet_respawn_warmup_only true
+    Only apply invsim_pet_respawn during warmup.
+
 css_ws
     Refreshes player inventory from the Inventory Simulator service and displays the configured URL.
 

@@ -19,7 +19,7 @@ public static class CChickenExtensions
         public static CChicken? CreatePet(
             CCSPlayerController controller,
             Vector3 position,
-            Vector3 angles
+            Vector3? angles
         )
         {
             var inventory = controller.InventoryServices?.GetInventory();
