@@ -113,7 +113,10 @@ public partial class InventorySimulator
 
     public HookResult OnChickenManagerServerGamePostSimulate(DynamicHook hook)
     {
-        if (!ConVars.IsPetFreeRoam.Value)
+        if (
+            !ConVars.IsPetFreeRoam.Value
+            && !(ConVars.IsPetRespawn.Value && EntityHelper.IsWarmupPeriod())
+        )
             return HookResult.Continue;
         foreach (var player in Utilities.GetPlayers())
         {
