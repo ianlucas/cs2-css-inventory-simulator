@@ -9,9 +9,12 @@ namespace InventorySimulator;
 
 public static partial class StringExtensions
 {
-    public static string StripColorTags(this string self)
+    extension(string self)
     {
-        return ColorTag().Replace(self, "");
+        public string StripColorTags()
+        {
+            return ColorTag().Replace(self, "");
+        }
     }
 
     [GeneratedRegex(@"\{.*?\}")]

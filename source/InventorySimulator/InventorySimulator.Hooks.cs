@@ -121,8 +121,8 @@ public partial class InventorySimulator
         foreach (var player in Utilities.GetPlayers())
         {
             var chicken = player.GetPetChicken();
-            if (chicken != null && !chicken.CanRoam())
-                chicken.SetCanRoam(true);
+            if (chicken != null && !chicken.CanRoam)
+                chicken.CanRoam = true;
         }
         return HookResult.Continue;
     }

@@ -9,8 +9,11 @@ namespace InventorySimulator;
 
 public static class CCSPlayer_WeaponServicesExtensions
 {
-    public static void DropWeapon(this CCSPlayer_WeaponServices self, CBasePlayerWeapon weapon)
+    extension(CCSPlayer_WeaponServices self)
     {
-        Natives.CCSPlayer_WeaponServices_DropWeapon(self.Handle, weapon.Handle);
+        public void DropWeapon(CBasePlayerWeapon weapon)
+        {
+            Natives.CCSPlayer_WeaponServices_DropWeapon(self.Handle, weapon.Handle);
+        }
     }
 }

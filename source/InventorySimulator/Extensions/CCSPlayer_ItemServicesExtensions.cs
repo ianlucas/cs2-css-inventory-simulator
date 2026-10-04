@@ -9,16 +9,19 @@ namespace InventorySimulator;
 
 public static class CCSPlayer_ItemServicesExtensions
 {
-    public static CCSPlayerController? GetController(this CCSPlayer_ItemServices self)
+    extension(CCSPlayer_ItemServices self)
     {
-        var pawn = self.Pawn.Value;
-        return pawn != null && pawn.Controller.Value != null
-            ? pawn.Controller.Value.As<CCSPlayerController>()
-            : null;
-    }
+        public CCSPlayerController? GetController()
+        {
+            var pawn = self.Pawn.Value;
+            return pawn != null && pawn.Controller.Value != null
+                ? pawn.Controller.Value.As<CCSPlayerController>()
+                : null;
+        }
 
-    public static void UpdateWearables(this CCSPlayer_ItemServices self)
-    {
-        Natives.CCSPlayer_ItemServices_SetWearables.Invoke(self.Handle);
+        public void UpdateWearables()
+        {
+            Natives.CCSPlayer_ItemServices_SetWearables.Invoke(self.Handle);
+        }
     }
 }
