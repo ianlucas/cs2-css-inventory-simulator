@@ -20,504 +20,478 @@ public static class CCSPlayerControllerExtensions
     public static IEnumerable<CCSPlayerControllerState> GetAllStates() =>
         _controllerStateManager.Values;
 
-    public static CCSPlayerControllerState GetState(this CCSPlayerController self)
+    extension(CCSPlayerController self)
     {
-        return _controllerStateManager.GetOrAdd(self.Index, _ => new(self.SteamID));
-    }
-
-    public static void Revalidate(this CCSPlayerController self)
-    {
-        if (self.GetState().SteamID != self.SteamID)
-            self.RemoveState();
-    }
-
-    public static void RemoveState(this CCSPlayerController self)
-    {
-        var controllerState = self.GetState();
-        controllerState.DisposeUseCmdTimer();
-        controllerState.ClearEconItemView();
-        _controllerStateManager.TryRemove(self.Index, out var _);
-    }
-
-    public static void HandleConnect(this CCSPlayerController self)
-    {
-        self.Revalidate();
-        self.RefreshInventory();
-    }
-
-    public static async void RefreshInventory(this CCSPlayerController self, bool force = false)
-    {
-        if (!force)
+        public CCSPlayerControllerState GetState()
         {
-            await self.FetchInventory();
+            return _controllerStateManager.GetOrAdd(self.Index, _ => new(self.SteamID));
+        }
+
+        public void Revalidate()
+        {
+            if (self.GetState().SteamID != self.SteamID)
+                self.RemoveState();
+        }
+
+        public void RemoveState()
+        {
+            var controllerState = self.GetState();
+            controllerState.DisposeUseCmdTimer();
+            controllerState.ClearEconItemView();
+            _controllerStateManager.TryRemove(self.Index, out var _);
+        }
+
+        public void HandleConnect()
+        {
+            self.Revalidate();
+            self.RefreshInventory();
+        }
+
+        public async void RefreshInventory(bool force = false)
+        {
+            if (!force)
+            {
+                await self.FetchInventory();
+                Server.NextWorldUpdate(() =>
+                {
+                    if (self.IsValid)
+                        self.HandleInventoryLoad();
+                });
+                return;
+            }
+            var oldInventory = self.GetState().Inventory;
+            await self.FetchInventory(force: true);
             Server.NextWorldUpdate(() =>
             {
                 if (self.IsValid)
+                {
+                    self.PrintToChat(
+                        Runtime.Plugin.Localizer["invsim.ws_completed", Rules.GetChatPrefix()]
+                    );
                     self.HandleInventoryLoad();
+                    self.HandlePostRefreshInventory(oldInventory);
+                }
             });
-            return;
         }
-        var oldInventory = self.GetState().Inventory;
-        await self.FetchInventory(force: true);
-        Server.NextWorldUpdate(() =>
+
+        public async Task FetchInventory(bool force = false)
         {
-            if (self.IsValid)
+            var controllerState = self.GetState();
+            if (!force && controllerState.Inventory != null)
+                return;
+            if (controllerState.IsFetching)
+                return;
+            controllerState.IsFetching = true;
+            var response = await Api.FetchEquippedAsync(self.SteamID);
+            if (response != null)
             {
-                self.PrintToChat(
-                    Runtime.Plugin.Localizer["invsim.ws_completed", Rules.GetChatPrefix()]
-                );
-                self.HandleInventoryLoad();
-                self.HandlePostRefreshInventory(oldInventory);
+                var inventory = new PlayerInventory(response);
+                inventory.InitializeWearOverrides();
+                controllerState.WsUpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                controllerState.Inventory = inventory;
             }
-        });
-    }
-
-    public static async Task FetchInventory(this CCSPlayerController self, bool force = false)
-    {
-        var controllerState = self.GetState();
-        if (!force && controllerState.Inventory != null)
-            return;
-        if (controllerState.IsFetching)
-            return;
-        controllerState.IsFetching = true;
-        var response = await Api.FetchEquippedAsync(self.SteamID);
-        if (response != null)
-        {
-            var inventory = new PlayerInventory(response);
-            inventory.InitializeWearOverrides();
-            controllerState.WsUpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            controllerState.Inventory = inventory;
+            controllerState.IsFetching = false;
+            controllerState.TriggerPostFetch();
         }
-        controllerState.IsFetching = false;
-        controllerState.TriggerPostFetch();
-    }
 
-    public static void HandleInventoryLoad(this CCSPlayerController self)
-    {
-        var inventory = self.InventoryServices?.GetInventory();
-        if (inventory?.IsValid == true)
-            inventory.SendInventoryUpdateEvent();
-    }
-
-    public static void HandlePostRefreshInventory(
-        this CCSPlayerController self,
-        PlayerInventory? oldInventory
-    )
-    {
-        var inventory = self.GetState().Inventory;
-        if (inventory != null && ConVars.IsWsImmediately.Value)
+        public void HandleInventoryLoad()
         {
-            self.RegiveAgent(inventory, oldInventory);
-            self.RegiveGloves(inventory, oldInventory);
-            self.RegiveWeapons(inventory, oldInventory);
-            self.RegivePet(inventory, oldInventory);
+            var inventory = self.InventoryServices?.Inventory;
+            if (inventory?.IsValid == true)
+                inventory.SendInventoryUpdateEvent();
         }
-    }
 
-    public static void HandleSpawn(this CCSPlayerController self)
-    {
-        Server.NextWorldUpdate(() =>
+        public void HandlePostRefreshInventory(PlayerInventory? oldInventory)
+        {
+            var inventory = self.GetState().Inventory;
+            if (inventory != null && ConVars.IsWsImmediately.Value)
+            {
+                self.RegiveAgent(inventory, oldInventory);
+                self.RegiveGloves(inventory, oldInventory);
+                self.RegiveWeapons(inventory, oldInventory);
+                self.RegivePet(inventory, oldInventory);
+            }
+        }
+
+        public void HandleSpawn()
+        {
+            Server.NextWorldUpdate(() =>
+            {
+                if (!self.IsValid)
+                    return;
+                var gloves = self.GetState()
+                    .Inventory?.GetGloves(self.TeamNum, ConVars.IsFallbackTeam.Value);
+                self.PlayerPawn.Value?.RefreshGloves(gloves != null);
+                self.RespawnPet();
+            });
+        }
+
+        public bool IsUseCmdBusy()
+        {
+            if (self.PlayerPawn.Value?.IsBuyMenuOpen == true)
+                return true;
+            if (self.PlayerPawn.Value?.IsDefusing == true)
+                return true;
+            var weapon = self.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Value;
+            if (weapon?.DesignerName != "weapon_c4")
+                return false;
+            var c4 = weapon.As<CC4>();
+            return c4.IsPlantingViaUse;
+        }
+
+        public void HandleProcessUsercmds()
+        {
+            if (
+                (self.Buttons & PlayerButtons.Use) != 0
+                && self.PlayerPawn.Value?.IsAbleToApplySpray() == true
+            )
+            {
+                var controllerState = self.GetState();
+                if (self.IsUseCmdBusy())
+                    controllerState.IsUseCmdBlocked = true;
+                controllerState.DisposeUseCmdTimer();
+                controllerState.UseCmdTimer = Runtime.Plugin.AddTimer(
+                    0.1f,
+                    () =>
+                    {
+                        if (controllerState.IsUseCmdBlocked)
+                            controllerState.IsUseCmdBlocked = false;
+                        else if (self.IsValid && !self.IsUseCmdBusy())
+                            self.ExecuteClientCommandFromServer("css_spray");
+                    }
+                );
+            }
+        }
+
+        public void RegiveAgent(PlayerInventory inventory, PlayerInventory? oldInventory)
+        {
+            if (ConVars.MinModels.Value > 0)
+                return;
+            var pawn = self.PlayerPawn.Value;
+            if (pawn == null)
+                return;
+            var teamNum = self.TeamNum;
+            var item = inventory.Agents.TryGetValue(teamNum, out var a) ? a : null;
+            var oldItem =
+                oldInventory != null && oldInventory.Agents.TryGetValue(teamNum, out a) ? a : null;
+            if (oldItem == item)
+                return;
+            pawn.SetModelFromLoadout();
+            pawn.SetModelFromClass();
+            var itemServices = pawn.ItemServices?.As<CCSPlayer_ItemServices>();
+            if (itemServices != null)
+                pawn.AcceptInput(
+                    "SetBodygroup",
+                    value: $"defusekit,{(itemServices.HasDefuser ? 1 : 0)}"
+                );
+            pawn.RefreshGloves(inventory.GetGloves(teamNum, ConVars.IsFallbackTeam.Value) != null);
+        }
+
+        public void RegiveGloves(PlayerInventory inventory, PlayerInventory? oldInventory)
+        {
+            var pawn = self.PlayerPawn.Value;
+            if (pawn == null || pawn.ItemServices == null)
+                return;
+            var isFallbackTeam = ConVars.IsFallbackTeam.Value;
+            var teamNum = self.TeamNum;
+            var item = inventory.GetGloves(teamNum, isFallbackTeam);
+            var oldItem = oldInventory?.GetGloves(teamNum, isFallbackTeam);
+            if (oldItem == item)
+                return;
+            pawn.RefreshGloves(item != null);
+        }
+
+        public void RegivePet(PlayerInventory inventory, PlayerInventory? oldInventory)
+        {
+            if (!ConVars.IsPetEnabled.Value)
+                return;
+            if (oldInventory?.Pet == inventory.Pet)
+                return;
+            var chicken = self.GetPetChicken();
+            if (chicken == null || chicken.LifeState != (byte)LifeState_t.LIFE_ALIVE)
+                return;
+            var sceneNode = chicken.CBodyComponent?.SceneNode;
+            if (sceneNode == null)
+                return;
+            var position = (Vector3)sceneNode.AbsOrigin;
+            var angles = (Vector3)sceneNode.AbsRotation;
+            var canRoam = chicken.CanRoam;
+            chicken.Remove();
+            // The client only applies the pet's look when the chicken is created.
+            var pet = CChicken.CreatePet(self, position, angles);
+            pet?.CanRoam = canRoam;
+        }
+
+        public void RespawnPet()
+        {
+            if (!ConVars.IsPetRespawn.Value || !ConVars.IsPetEnabled.Value)
+                return;
+            if (ConVars.IsPetRespawnWarmupOnly.Value && !EntityHelper.IsWarmupPeriod())
+                return;
+            var chicken = self.GetPetChicken();
+            if (chicken != null && chicken.LifeState == (byte)LifeState_t.LIFE_ALIVE)
+                return;
+            // The game spawns pets at a random spot near their team's spawn points, or anywhere
+            // on the map in deathmatch.
+            var position = EntityHelper.GetRandomSpawnPoint(self.TeamNum)?.AbsOrigin;
+            if (position != null)
+                CChicken.CreatePet(self, (Vector3)position, null);
+        }
+
+        public void RegiveWeapons(PlayerInventory inventory, PlayerInventory? oldInventory)
+        {
+            var pawn = self.PlayerPawn.Value;
+            var weaponServices = pawn?.WeaponServices?.As<CCSPlayer_WeaponServices>();
+            if (pawn == null || weaponServices == null)
+                return;
+            var activeDesignerName = weaponServices.ActiveWeapon.Value?.DesignerName;
+            var targets = new List<(string, string, int, int, bool, gear_slot_t)>();
+            foreach (var handle in weaponServices.MyWeapons)
+            {
+                var weapon = handle.Value?.As<CCSWeaponBase>();
+                if (weapon == null || weapon.DesignerName.Contains("weapon_") != true)
+                    continue;
+                if (weapon.OriginalOwnerXuidLow != (uint)self.SteamID)
+                    continue;
+                var data = weapon.VData?.As<CCSWeaponBaseVData>();
+                if (
+                    data != null
+                    && data.GearSlot
+                        is gear_slot_t.GEAR_SLOT_RIFLE
+                            or gear_slot_t.GEAR_SLOT_PISTOL
+                            or gear_slot_t.GEAR_SLOT_KNIFE
+                )
+                {
+                    var entityDef = weapon.AttributeManager.Item.ItemDefinitionIndex;
+                    var isFallbackTeam = ConVars.IsFallbackTeam.Value;
+                    var oldItem =
+                        data.GearSlot is gear_slot_t.GEAR_SLOT_KNIFE
+                            ? oldInventory?.GetKnife(self.TeamNum, isFallbackTeam)
+                            : oldInventory?.GetWeapon(self.TeamNum, entityDef, isFallbackTeam);
+                    var item =
+                        data.GearSlot is gear_slot_t.GEAR_SLOT_KNIFE
+                            ? inventory.GetKnife(self.TeamNum, isFallbackTeam)
+                            : inventory.GetWeapon(self.TeamNum, entityDef, isFallbackTeam);
+                    if (oldItem == item)
+                        continue;
+                    var clip = weapon.Clip1;
+                    var reserve = weapon.ReserveAmmo[0];
+                    targets.Add(
+                        (
+                            weapon.DesignerName,
+                            weapon.GetDesignerName(),
+                            clip,
+                            reserve,
+                            activeDesignerName == weapon.DesignerName,
+                            data.GearSlot
+                        )
+                    );
+                }
+            }
+            foreach (var target in targets)
+            {
+                var designerName = target.Item1;
+                var actualDesignerName = target.Item2;
+                var clip = target.Item3;
+                var reserve = target.Item4;
+                var active = target.Item5;
+                var gearSlot = target.Item6;
+                var oldWeapon = weaponServices
+                    .MyWeapons.FirstOrDefault(h => h.Value?.DesignerName == designerName)
+                    ?.Value;
+                if (oldWeapon != null)
+                {
+                    weaponServices.DropWeapon(oldWeapon);
+                    oldWeapon.Remove();
+                }
+                var weapon = self.GiveNamedItem<CBasePlayerWeapon>(actualDesignerName);
+                if (weapon != null)
+                    Server.RunOnTick(
+                        Server.TickCount + 32,
+                        () =>
+                        {
+                            if (weapon.IsValid)
+                            {
+                                weapon.Clip1 = clip;
+                                Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+                                weapon.ReserveAmmo[0] = reserve;
+                                Utilities.SetStateChanged(
+                                    weapon,
+                                    "CBasePlayerWeapon",
+                                    "m_pReserveAmmo"
+                                );
+                                Server.NextWorldUpdate(() =>
+                                {
+                                    if (active && self.IsValid)
+                                    {
+                                        var command = gearSlot switch
+                                        {
+                                            gear_slot_t.GEAR_SLOT_RIFLE => "slot1",
+                                            gear_slot_t.GEAR_SLOT_PISTOL => "slot2",
+                                            gear_slot_t.GEAR_SLOT_KNIFE => "slot3",
+                                            _ => null,
+                                        };
+                                        if (command != null)
+                                            self.ExecuteClientCommand(command);
+                                    }
+                                });
+                            }
+                        }
+                    );
+            }
+        }
+
+        public async void SignIn()
+        {
+            var controllerState = self.GetState();
+            if (controllerState.IsFetching)
+                return;
+            controllerState.IsFetching = true;
+            var response = await Api.SendSignIn(self.SteamID.ToString());
+            controllerState.IsFetching = false;
+            Server.NextWorldUpdate(() =>
+            {
+                var prefix = Rules.GetChatPrefix();
+                if (response == null)
+                {
+                    self?.PrintToChat(Runtime.Plugin.Localizer["invsim.login_failed", prefix]);
+                    return;
+                }
+                self?.PrintToChat(
+                    Runtime.Plugin.Localizer[
+                        "invsim.login",
+                        prefix,
+                        $"{Api.GetUrl("/api/sign-in/callback")}?token={response.Token}"
+                    ]
+                );
+            });
+        }
+
+        public unsafe void SprayGraffiti()
         {
             if (!self.IsValid)
                 return;
-            var gloves = self.GetState()
-                .Inventory?.GetGloves(self.TeamNum, ConVars.IsFallbackTeam.Value);
-            self.PlayerPawn.Value?.RefreshGloves(gloves != null);
-            self.RespawnPet();
-        });
-    }
-
-    public static bool IsUseCmdBusy(this CCSPlayerController self)
-    {
-        if (self.PlayerPawn.Value?.IsBuyMenuOpen == true)
-            return true;
-        if (self.PlayerPawn.Value?.IsDefusing == true)
-            return true;
-        var weapon = self.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Value;
-        if (weapon?.DesignerName != "weapon_c4")
-            return false;
-        var c4 = weapon.As<CC4>();
-        return c4.IsPlantingViaUse;
-    }
-
-    public static void HandleProcessUsercmds(this CCSPlayerController self)
-    {
-        if (
-            (self.Buttons & PlayerButtons.Use) != 0
-            && self.PlayerPawn.Value?.IsAbleToApplySpray() == true
-        )
-        {
-            var controllerState = self.GetState();
-            if (self.IsUseCmdBusy())
-                controllerState.IsUseCmdBlocked = true;
-            controllerState.DisposeUseCmdTimer();
-            controllerState.UseCmdTimer = Runtime.Plugin.AddTimer(
-                0.1f,
-                () =>
-                {
-                    if (controllerState.IsUseCmdBlocked)
-                        controllerState.IsUseCmdBlocked = false;
-                    else if (self.IsValid && !self.IsUseCmdBusy())
-                        self.ExecuteClientCommandFromServer("css_spray");
-                }
-            );
-        }
-    }
-
-    public static void RegiveAgent(
-        this CCSPlayerController self,
-        PlayerInventory inventory,
-        PlayerInventory? oldInventory
-    )
-    {
-        if (ConVars.MinModels.Value > 0)
-            return;
-        var pawn = self.PlayerPawn.Value;
-        if (pawn == null)
-            return;
-        var teamNum = self.TeamNum;
-        var item = inventory.Agents.TryGetValue(teamNum, out var a) ? a : null;
-        var oldItem =
-            oldInventory != null && oldInventory.Agents.TryGetValue(teamNum, out a) ? a : null;
-        if (oldItem == item)
-            return;
-        pawn.SetModelFromLoadout();
-        pawn.SetModelFromClass();
-        var itemServices = pawn.ItemServices?.As<CCSPlayer_ItemServices>();
-        if (itemServices != null)
-            pawn.AcceptInput(
-                "SetBodygroup",
-                value: $"defusekit,{(itemServices.HasDefuser ? 1 : 0)}"
-            );
-        pawn.RefreshGloves(inventory.GetGloves(teamNum, ConVars.IsFallbackTeam.Value) != null);
-    }
-
-    public static void RegiveGloves(
-        this CCSPlayerController self,
-        PlayerInventory inventory,
-        PlayerInventory? oldInventory
-    )
-    {
-        var pawn = self.PlayerPawn.Value;
-        if (pawn == null || pawn.ItemServices == null)
-            return;
-        var isFallbackTeam = ConVars.IsFallbackTeam.Value;
-        var teamNum = self.TeamNum;
-        var item = inventory.GetGloves(teamNum, isFallbackTeam);
-        var oldItem = oldInventory?.GetGloves(teamNum, isFallbackTeam);
-        if (oldItem == item)
-            return;
-        pawn.RefreshGloves(item != null);
-    }
-
-    public static void RegivePet(
-        this CCSPlayerController self,
-        PlayerInventory inventory,
-        PlayerInventory? oldInventory
-    )
-    {
-        if (!ConVars.IsPetEnabled.Value)
-            return;
-        if (oldInventory?.Pet == inventory.Pet)
-            return;
-        var chicken = self.GetPetChicken();
-        if (chicken == null || chicken.LifeState != (byte)LifeState_t.LIFE_ALIVE)
-            return;
-        var sceneNode = chicken.CBodyComponent?.SceneNode;
-        if (sceneNode == null)
-            return;
-        var position = (Vector3)sceneNode.AbsOrigin;
-        var angles = (Vector3)sceneNode.AbsRotation;
-        var canRoam = chicken.CanRoam();
-        chicken.Remove();
-        // The client only applies the pet's look when the chicken is created.
-        var pet = CChicken.CreatePet(self, position, angles);
-        pet?.SetCanRoam(canRoam);
-    }
-
-    public static void RespawnPet(this CCSPlayerController self)
-    {
-        if (!ConVars.IsPetRespawn.Value || !ConVars.IsPetEnabled.Value)
-            return;
-        if (ConVars.IsPetRespawnWarmupOnly.Value && !EntityHelper.IsWarmupPeriod())
-            return;
-        var chicken = self.GetPetChicken();
-        if (chicken != null && chicken.LifeState == (byte)LifeState_t.LIFE_ALIVE)
-            return;
-        // The game spawns pets at a random spot near their team's spawn points, or anywhere
-        // on the map in deathmatch.
-        var position = EntityHelper.GetRandomSpawnPoint(self.TeamNum)?.AbsOrigin;
-        if (position != null)
-            CChicken.CreatePet(self, (Vector3)position, null);
-    }
-
-    public static void RegiveWeapons(
-        this CCSPlayerController self,
-        PlayerInventory inventory,
-        PlayerInventory? oldInventory
-    )
-    {
-        var pawn = self.PlayerPawn.Value;
-        var weaponServices = pawn?.WeaponServices?.As<CCSPlayer_WeaponServices>();
-        if (pawn == null || weaponServices == null)
-            return;
-        var activeDesignerName = weaponServices.ActiveWeapon.Value?.DesignerName;
-        var targets = new List<(string, string, int, int, bool, gear_slot_t)>();
-        foreach (var handle in weaponServices.MyWeapons)
-        {
-            var weapon = handle.Value?.As<CCSWeaponBase>();
-            if (weapon == null || weapon.DesignerName.Contains("weapon_") != true)
-                continue;
-            if (weapon.OriginalOwnerXuidLow != (uint)self.SteamID)
-                continue;
-            var data = weapon.VData?.As<CCSWeaponBaseVData>();
-            if (
-                data != null
-                && data.GearSlot
-                    is gear_slot_t.GEAR_SLOT_RIFLE
-                        or gear_slot_t.GEAR_SLOT_PISTOL
-                        or gear_slot_t.GEAR_SLOT_KNIFE
-            )
-            {
-                var entityDef = weapon.AttributeManager.Item.ItemDefinitionIndex;
-                var isFallbackTeam = ConVars.IsFallbackTeam.Value;
-                var oldItem =
-                    data.GearSlot is gear_slot_t.GEAR_SLOT_KNIFE
-                        ? oldInventory?.GetKnife(self.TeamNum, isFallbackTeam)
-                        : oldInventory?.GetWeapon(self.TeamNum, entityDef, isFallbackTeam);
-                var item =
-                    data.GearSlot is gear_slot_t.GEAR_SLOT_KNIFE
-                        ? inventory.GetKnife(self.TeamNum, isFallbackTeam)
-                        : inventory.GetWeapon(self.TeamNum, entityDef, isFallbackTeam);
-                if (oldItem == item)
-                    continue;
-                var clip = weapon.Clip1;
-                var reserve = weapon.ReserveAmmo[0];
-                targets.Add(
-                    (
-                        weapon.DesignerName,
-                        weapon.GetDesignerName(),
-                        clip,
-                        reserve,
-                        activeDesignerName == weapon.DesignerName,
-                        data.GearSlot
-                    )
-                );
-            }
-        }
-        foreach (var target in targets)
-        {
-            var designerName = target.Item1;
-            var actualDesignerName = target.Item2;
-            var clip = target.Item3;
-            var reserve = target.Item4;
-            var active = target.Item5;
-            var gearSlot = target.Item6;
-            var oldWeapon = weaponServices
-                .MyWeapons.FirstOrDefault(h => h.Value?.DesignerName == designerName)
-                ?.Value;
-            if (oldWeapon != null)
-            {
-                weaponServices.DropWeapon(oldWeapon);
-                oldWeapon.Remove();
-            }
-            var weapon = self.GiveNamedItem<CBasePlayerWeapon>(actualDesignerName);
-            if (weapon != null)
-                Server.RunOnTick(
-                    Server.TickCount + 32,
-                    () =>
-                    {
-                        if (weapon.IsValid)
-                        {
-                            weapon.Clip1 = clip;
-                            Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
-                            weapon.ReserveAmmo[0] = reserve;
-                            Utilities.SetStateChanged(
-                                weapon,
-                                "CBasePlayerWeapon",
-                                "m_pReserveAmmo"
-                            );
-                            Server.NextWorldUpdate(() =>
-                            {
-                                if (active && self.IsValid)
-                                {
-                                    var command = gearSlot switch
-                                    {
-                                        gear_slot_t.GEAR_SLOT_RIFLE => "slot1",
-                                        gear_slot_t.GEAR_SLOT_PISTOL => "slot2",
-                                        gear_slot_t.GEAR_SLOT_KNIFE => "slot3",
-                                        _ => null,
-                                    };
-                                    if (command != null)
-                                        self.ExecuteClientCommand(command);
-                                }
-                            });
-                        }
-                    }
-                );
-        }
-    }
-
-    public static async void SignIn(this CCSPlayerController self)
-    {
-        var controllerState = self.GetState();
-        if (controllerState.IsFetching)
-            return;
-        controllerState.IsFetching = true;
-        var response = await Api.SendSignIn(self.SteamID.ToString());
-        controllerState.IsFetching = false;
-        Server.NextWorldUpdate(() =>
-        {
-            var prefix = Rules.GetChatPrefix();
-            if (response == null)
-            {
-                self?.PrintToChat(Runtime.Plugin.Localizer["invsim.login_failed", prefix]);
+            var item = self.GetState().Inventory?.Graffiti;
+            if (item == null || item.Def == null || item.Tint == null)
                 return;
+            var pawn = self.PlayerPawn.Value;
+            if (pawn == null || pawn.LifeState != (int)LifeState_t.LIFE_ALIVE)
+                return;
+            var movementServices = pawn.MovementServices?.As<CCSPlayer_MovementServices>();
+            if (movementServices == null)
+                return;
+            var trace = stackalloc CGameTrace[1];
+            if (!pawn.IsAbleToApplySpray((nint)trace) || (nint)trace == nint.Zero)
+                return;
+            self.EmitSound("SprayCan.Shake");
+            self.GetState().SprayUsedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var endPos = SchemaHelper.ToVector(trace->EndPos);
+            var hitNormal = SchemaHelper.ToVector(trace->HitNormal);
+            var sprayDecal = Utilities.CreateEntityByName<CPlayerSprayDecal>("player_spray_decal");
+            if (sprayDecal != null)
+            {
+                sprayDecal.EndPos.Add(endPos);
+                sprayDecal.Start.Add(endPos);
+                sprayDecal.Left.Add(movementServices.Left);
+                sprayDecal.Normal.Add(hitNormal);
+                sprayDecal.AccountID = (uint)self.SteamID;
+                sprayDecal.Player = item.Def.Value;
+                sprayDecal.TintID = item.Tint.Value;
+                sprayDecal.DispatchSpawn();
+                self.EmitSound("SprayCan.Paint");
+                self.ConsumeGraffitiCharge(item);
             }
-            self?.PrintToChat(
-                Runtime.Plugin.Localizer[
-                    "invsim.login",
-                    prefix,
-                    $"{Api.GetUrl("/api/sign-in/callback")}?token={response.Token}"
-                ]
-            );
-        });
-    }
-
-    public static unsafe void SprayGraffiti(this CCSPlayerController self)
-    {
-        if (!self.IsValid)
-            return;
-        var item = self.GetState().Inventory?.Graffiti;
-        if (item == null || item.Def == null || item.Tint == null)
-            return;
-        var pawn = self.PlayerPawn.Value;
-        if (pawn == null || pawn.LifeState != (int)LifeState_t.LIFE_ALIVE)
-            return;
-        var movementServices = pawn.MovementServices?.As<CCSPlayer_MovementServices>();
-        if (movementServices == null)
-            return;
-        var trace = stackalloc CGameTrace[1];
-        if (!pawn.IsAbleToApplySpray((nint)trace) || (nint)trace == nint.Zero)
-            return;
-        self.EmitSound("SprayCan.Shake");
-        self.GetState().SprayUsedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var endPos = SchemaHelper.ToVector(trace->EndPos);
-        var hitNormal = SchemaHelper.ToVector(trace->HitNormal);
-        var sprayDecal = Utilities.CreateEntityByName<CPlayerSprayDecal>("player_spray_decal");
-        if (sprayDecal != null)
-        {
-            sprayDecal.EndPos.Add(endPos);
-            sprayDecal.Start.Add(endPos);
-            sprayDecal.Left.Add(movementServices.Left);
-            sprayDecal.Normal.Add(hitNormal);
-            sprayDecal.AccountID = (uint)self.SteamID;
-            sprayDecal.Player = item.Def.Value;
-            sprayDecal.TintID = item.Tint.Value;
-            sprayDecal.DispatchSpawn();
-            self.EmitSound("SprayCan.Paint");
-            self.ConsumeGraffitiCharge(item);
         }
-    }
 
-    public static void ConsumeGraffitiCharge(this CCSPlayerController self, InventoryItem item)
-    {
-        if (item.Charges == null)
-            return;
-        item.Charges -= 1;
-        if (item.Uid != null)
-            Api.SendConsumeItemSpray(self.SteamID, item.Uid.Value);
-        var prefix = Rules.GetChatPrefix();
-        if (item.Charges <= 0)
+        public void ConsumeGraffitiCharge(InventoryItem item)
         {
-            self.GetState().Inventory?.ClearGraffiti();
-            self.PrintToChat(Runtime.Plugin.Localizer["invsim.spray_charges_empty", prefix]);
+            if (item.Charges == null)
+                return;
+            item.Charges -= 1;
+            if (item.Uid != null)
+                Api.SendConsumeItemSpray(self.SteamID, item.Uid.Value);
+            var prefix = Rules.GetChatPrefix();
+            if (item.Charges <= 0)
+            {
+                self.GetState().Inventory?.ClearGraffiti();
+                self.PrintToChat(Runtime.Plugin.Localizer["invsim.spray_charges_empty", prefix]);
+            }
+            else
+                self.PrintToChat(
+                    Runtime.Plugin.Localizer["invsim.spray_charges", prefix, item.Charges.Value]
+                );
         }
-        else
-            self.PrintToChat(
-                Runtime.Plugin.Localizer["invsim.spray_charges", prefix, item.Charges.Value]
-            );
-    }
 
-    public static void HandleSprayDecalCreated(
-        this CCSPlayerController self,
-        CPlayerSprayDecal sprayDecal
-    )
-    {
-        var item = self.GetState().Inventory?.Graffiti;
-        if (item != null && item.Def != null && item.Tint != null)
+        public void HandleSprayDecalCreated(CPlayerSprayDecal sprayDecal)
         {
-            sprayDecal.Player = item.Def.Value;
-            Utilities.SetStateChanged(sprayDecal, "CPlayerSprayDecal", "m_nPlayer");
-            sprayDecal.TintID = item.Tint.Value;
-            Utilities.SetStateChanged(sprayDecal, "CPlayerSprayDecal", "m_nTintID");
+            var item = self.GetState().Inventory?.Graffiti;
+            if (item != null && item.Def != null && item.Tint != null)
+            {
+                sprayDecal.Player = item.Def.Value;
+                Utilities.SetStateChanged(sprayDecal, "CPlayerSprayDecal", "m_nPlayer");
+                sprayDecal.TintID = item.Tint.Value;
+                Utilities.SetStateChanged(sprayDecal, "CPlayerSprayDecal", "m_nTintID");
+            }
         }
-    }
 
-    public static void IncrementWeaponStatTrak(
-        this CCSPlayerController self,
-        string designerName,
-        string weaponItemId
-    )
-    {
-        var weapon = self.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Value;
-        if (
-            weapon == null
-            || !weapon.HasCustomItemID()
-            || !ulong.TryParse(weaponItemId, out var parsedItemId)
-            || weapon.AttributeManager.Item.AccountID
-                != new CSteamID(self.SteamID).GetAccountID().m_AccountID
-            || weapon.AttributeManager.Item.ItemID != parsedItemId
-        )
-            return;
-        var inventory = self.GetState().Inventory;
-        var isFallbackTeam = ConVars.IsFallbackTeam.Value;
-        var item = ItemHelper.IsMeleeDesignerName(designerName)
-            ? inventory?.GetKnife(self.TeamNum, isFallbackTeam)
-            : inventory?.GetWeapon(
-                self.TeamNum,
-                weapon.AttributeManager.Item.ItemDefinitionIndex,
-                isFallbackTeam
-            );
-        if (item == null || item.Stattrak == null || item.Stattrak < 0 || item.Uid == null)
-            return;
-        item.Stattrak += 1;
-        var statTrak = TypeHelper.ViewAs<int, float>(item.Stattrak.Value);
-        weapon.AttributeManager.Item.NetworkedDynamicAttributes.SetOrAddAttributeValueByName(
-            "kill eater",
-            statTrak
-        );
-        Api.SendStatTrakIncrement(self.SteamID, item.Uid.Value);
-    }
-
-    public static void IncrementMusicKitStatTrak(
-        this CCSPlayerController self,
-        EventRoundMvp @event
-    )
-    {
-        var item = self.GetState().Inventory?.MusicKit;
-        if (item != null && item.Uid != null && item.Stattrak != null && item.Stattrak >= 0)
+        public void IncrementWeaponStatTrak(string designerName, string weaponItemId)
         {
+            var weapon = self.PlayerPawn.Value?.WeaponServices?.ActiveWeapon.Value;
+            if (
+                weapon == null
+                || !weapon.HasCustomItemID()
+                || !ulong.TryParse(weaponItemId, out var parsedItemId)
+                || weapon.AttributeManager.Item.AccountID
+                    != new CSteamID(self.SteamID).GetAccountID().m_AccountID
+                || weapon.AttributeManager.Item.ItemID != parsedItemId
+            )
+                return;
+            var inventory = self.GetState().Inventory;
+            var isFallbackTeam = ConVars.IsFallbackTeam.Value;
+            var item = ItemHelper.IsMeleeDesignerName(designerName)
+                ? inventory?.GetKnife(self.TeamNum, isFallbackTeam)
+                : inventory?.GetWeapon(
+                    self.TeamNum,
+                    weapon.AttributeManager.Item.ItemDefinitionIndex,
+                    isFallbackTeam
+                );
+            if (item == null || item.Stattrak == null || item.Stattrak < 0 || item.Uid == null)
+                return;
             item.Stattrak += 1;
-            @event.Musickitmvps = item.Stattrak.Value;
+            var statTrak = TypeHelper.ViewAs<int, float>(item.Stattrak.Value);
+            weapon.AttributeManager.Item.NetworkedDynamicAttributes.SetOrAddAttributeValueByName(
+                "kill eater",
+                statTrak
+            );
             Api.SendStatTrakIncrement(self.SteamID, item.Uid.Value);
         }
-    }
 
-    public static void HandleDisconnect(this CCSPlayerController self)
-    {
-        if (!ConVars.IsPersistInventory.Value && !Inventories.Has(self.SteamID))
-            self.GetState().Inventory = null;
-    }
+        public void IncrementMusicKitStatTrak(EventRoundMvp @event)
+        {
+            var item = self.GetState().Inventory?.MusicKit;
+            if (item != null && item.Uid != null && item.Stattrak != null && item.Stattrak >= 0)
+            {
+                item.Stattrak += 1;
+                @event.Musickitmvps = item.Stattrak.Value;
+                Api.SendStatTrakIncrement(self.SteamID, item.Uid.Value);
+            }
+        }
 
-    public static CChicken? GetPetChicken(this CCSPlayerController self)
-    {
-        var ptr = Natives.CCSPlayerController_GetPetChicken.Invoke(self.Handle);
-        return ptr != nint.Zero ? new CChicken(ptr) : null;
-    }
+        public void HandleDisconnect()
+        {
+            if (!ConVars.IsPersistInventory.Value && !Inventories.Has(self.SteamID))
+                self.GetState().Inventory = null;
+        }
 
-    public static void SetPetChicken(this CCSPlayerController self, CChicken chicken)
-    {
-        Natives.CCSPlayerController_SetPetChicken.Invoke(self.Handle, chicken.Handle);
+        public CChicken? GetPetChicken()
+        {
+            var ptr = Natives.CCSPlayerController_GetPetChicken.Invoke(self.Handle);
+            return ptr != nint.Zero ? new CChicken(ptr) : null;
+        }
+
+        public void SetPetChicken(CChicken chicken)
+        {
+            Natives.CCSPlayerController_SetPetChicken.Invoke(self.Handle, chicken.Handle);
+        }
     }
 }

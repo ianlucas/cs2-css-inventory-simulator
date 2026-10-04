@@ -22,7 +22,7 @@ public static class CChickenExtensions
             Vector3? angles
         )
         {
-            var inventory = controller.InventoryServices?.GetInventory();
+            var inventory = controller.InventoryServices?.Inventory;
             if (inventory?.IsValid != true)
                 return null;
             // InitPet doesn't check that the pet slot is equipped, the game does it before calling.
@@ -44,32 +44,32 @@ public static class CChickenExtensions
         }
     }
 
-    // The game stops pets from roaming shortly after freeze time ends.
-    public static bool CanRoam(this CChicken self)
+    extension(CChicken self)
     {
-        return Marshal.ReadByte(self.Handle + Natives.CChicken_m_bCanRoam) != 0;
-    }
+        // The game stops pets from roaming shortly after freeze time ends.
+        public bool CanRoam
+        {
+            get => Marshal.ReadByte(self.Handle + Natives.CChicken_m_bCanRoam) != 0;
+            set =>
+                Marshal.WriteByte(self.Handle + Natives.CChicken_m_bCanRoam, (byte)(value ? 1 : 0));
+        }
 
-    public static void SetCanRoam(this CChicken self, bool value)
-    {
-        Marshal.WriteByte(self.Handle + Natives.CChicken_m_bCanRoam, (byte)(value ? 1 : 0));
-    }
-
-    public static void ApplyPetStyle(this CChicken self, InventoryItem item)
-    {
-        var skeletonInstance = self.CBodyComponent?.SceneNode?.GetSkeletonInstance();
-        if (skeletonInstance == null)
-            return;
-        var materialGroup =
-            item.Style > 0 ? SchemaHelper.MakeStringToken(item.Style.Value.ToString()) : 0;
-        if (skeletonInstance.MaterialGroup.Value == materialGroup)
-            return;
-        skeletonInstance.MaterialGroup.Value = materialGroup;
-        NativeAPI.SchemaSetStateChanged(
-            skeletonInstance.Handle,
-            (uint)Schema.GetSchemaOffset("CSkeletonInstance", "m_materialGroup"),
-            0xFFFFFFFF,
-            0xFFFFFFFF
-        );
+        public void ApplyPetStyle(InventoryItem item)
+        {
+            var skeletonInstance = self.CBodyComponent?.SceneNode?.GetSkeletonInstance();
+            if (skeletonInstance == null)
+                return;
+            var materialGroup =
+                item.Style > 0 ? SchemaHelper.MakeStringToken(item.Style.Value.ToString()) : 0;
+            if (skeletonInstance.MaterialGroup.Value == materialGroup)
+                return;
+            skeletonInstance.MaterialGroup.Value = materialGroup;
+            NativeAPI.SchemaSetStateChanged(
+                skeletonInstance.Handle,
+                (uint)Schema.GetSchemaOffset("CSkeletonInstance", "m_materialGroup"),
+                0xFFFFFFFF,
+                0xFFFFFFFF
+            );
+        }
     }
 }

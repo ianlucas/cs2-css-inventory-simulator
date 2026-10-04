@@ -9,10 +9,9 @@ namespace InventorySimulator;
 
 public static class CCSPlayerController_InventoryServicesExtensions
 {
-    public static CCSPlayerInventory GetInventory(this CCSPlayerController_InventoryServices self)
+    extension(CCSPlayerController_InventoryServices self)
     {
-        return new CCSPlayerInventory(
-            self.Handle + Natives.CCSPlayerController_InventoryServices_m_pInventory
-        );
+        public CCSPlayerInventory Inventory =>
+            new(self.Handle + Natives.CCSPlayerController_InventoryServices_m_pInventory);
     }
 }

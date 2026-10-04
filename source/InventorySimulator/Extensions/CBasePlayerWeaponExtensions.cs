@@ -9,18 +9,21 @@ namespace InventorySimulator;
 
 public static class CBasePlayerWeaponExtensions
 {
-    public static string GetDesignerName(this CBasePlayerWeapon self)
+    extension(CBasePlayerWeapon self)
     {
-        var designerName =
-            SchemaHelper
-                .GetItemSchema()
-                ?.GetItemDefinition(self.AttributeManager.Item.ItemDefinitionIndex)
-                ?.DefinitionName ?? self.DesignerName;
-        return ItemHelper.IsMeleeDesignerName(designerName) ? "weapon_knife" : designerName;
-    }
+        public string GetDesignerName()
+        {
+            var designerName =
+                SchemaHelper
+                    .GetItemSchema()
+                    ?.GetItemDefinition(self.AttributeManager.Item.ItemDefinitionIndex)
+                    ?.DefinitionName ?? self.DesignerName;
+            return ItemHelper.IsMeleeDesignerName(designerName) ? "weapon_knife" : designerName;
+        }
 
-    public static bool HasCustomItemID(this CBasePlayerWeapon self)
-    {
-        return self.AttributeManager.Item.ItemID >= CEconItemViewExtensions.MinimumCustomItemID;
+        public bool HasCustomItemID()
+        {
+            return self.AttributeManager.Item.ItemID >= CEconItemViewExtensions.MinimumCustomItemID;
+        }
     }
 }
