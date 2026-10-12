@@ -49,6 +49,9 @@ invsim_stattrak_ignore_bots true
 invsim_fallback_team false
     Allow using skins from any team (prioritizes current team first).
 
+invsim_loadout_enabled true
+    Give players the weapons of their equipped loadout instead of their game loadout.
+
 invsim_minmodels 0
     Enable player agents (0 = enabled, 1 = use map models per team, 2 = SAS & Phoenix).
 

@@ -59,6 +59,17 @@ public class PlayerInventory(EquippedV5Response data)
         return null;
     }
 
+    public ushort? GetLoadoutDef(byte team, loadout_slot_t slot)
+    {
+        if (
+            _data.Loadout != null
+            && _data.Loadout.TryGetValue(team, out var slots)
+            && slots.TryGetValue((byte)slot, out var def)
+        )
+            return def;
+        return null;
+    }
+
     public InventoryItem? GetItemForSlot(
         byte team,
         loadout_slot_t slot,

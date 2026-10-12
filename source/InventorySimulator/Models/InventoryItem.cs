@@ -71,6 +71,10 @@ public class InventoryItem
 
     private (int? statTrak, List<(string, float)> attributes)? _attributesCache;
 
+    // A hash lets the item view built for it be reused like any other skin's.
+    public static InventoryItem CreateStock(ushort def) =>
+        new() { Def = def, Hash = $"stock{def}" };
+
     public override int GetHashCode()
     {
         return Hash?.GetHashCode() ?? 0;

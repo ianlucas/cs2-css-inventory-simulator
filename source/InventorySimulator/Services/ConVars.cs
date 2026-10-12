@@ -124,6 +124,12 @@ public static class ConVars
         false
     );
 
+    public static readonly FakeConVar<bool> IsLoadoutEnabled = new(
+        "invsim_loadout_enabled",
+        "Give players the weapons of their equipped loadout instead of their game loadout.",
+        true
+    );
+
     public static readonly FakeConVar<int> MinModels = new(
         "invsim_minmodels",
         "Enable player agents (0 = enabled, 1 = use map models per team, 2 = SAS & Phoenix).",

@@ -27,6 +27,9 @@ public class EquippedV5Response
     [JsonPropertyName("knives")]
     public Dictionary<byte, InventoryItem> Knives { get; set; } = [];
 
+    [JsonPropertyName("loadout")]
+    public Dictionary<byte, Dictionary<byte, ushort>>? Loadout { get; set; }
+
     [JsonPropertyName("musicKit")]
     public InventoryItem? MusicKit { get; set; }
 

@@ -35,6 +35,7 @@ public partial class InventorySimulator : BasePlugin
         ConVars.File.ValueChanged += OnFileChanged;
         ConVars.IsRequireInventory.ValueChanged += OnIsRequireInventoryChanged;
         ConVars.IsSprayOnUse.ValueChanged += OnIsSprayOnUseChanged;
+        ConVars.IsLoadoutEnabled.ValueChanged += OnIsLoadoutEnabledChanged;
         ConVars.IsPetImmortal.ValueChanged += OnIsPetImmortalChanged;
         ConVars.IsPetFreeRoam.ValueChanged += OnPetRoamConVarChanged;
         ConVars.IsPetRespawn.ValueChanged += OnPetRoamConVarChanged;
@@ -94,6 +95,12 @@ public partial class InventorySimulator : BasePlugin
         else
             Natives.CServerSideClientBase_ActivatePlayer.Unhook(OnActivatePlayerPre, HookMode.Pre);
         _isActivatePlayerHooked = value;
+    }
+
+    public void OnIsLoadoutEnabledChanged(object? _, bool __)
+    {
+        foreach (var player in Utilities.GetPlayers().Where(p => !p.IsBot))
+            player.HandleInventoryLoad();
     }
 
     public void OnIsSprayOnUseChanged(object? _, bool value)
