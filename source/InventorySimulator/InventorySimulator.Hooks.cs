@@ -96,13 +96,20 @@ public partial class InventorySimulator
             return HookResult.Continue;
         var team = hook.GetParam<int>(1);
         var controllerState = player.GetState();
+        var def = itemView.ItemDefinitionIndex;
+        var loadoutDef = ConVars.IsLoadoutEnabled.Value
+            ? controllerState.Inventory?.GetLoadoutDef((byte)team, (loadout_slot_t)slot)
+            : null;
         var item = controllerState.Inventory?.GetItemForSlot(
             (byte)team,
             (loadout_slot_t)slot,
-            itemView.ItemDefinitionIndex,
+            loadoutDef ?? def,
             ConVars.IsFallbackTeam.Value,
             ConVars.MinModels.Value
         );
+        // Buying, the buy menu and the spawn weapons all read the weapon from here.
+        if (item == null && loadoutDef != null && loadoutDef != def)
+            item = InventoryItem.CreateStock(loadoutDef.Value);
         if (item != null)
         {
             hook.SetReturn(controllerState.GetEconItemView(team, slot, item, itemView.Handle));
