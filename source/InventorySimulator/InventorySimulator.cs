@@ -156,6 +156,5 @@ public partial class InventorySimulator : BasePlugin
         OnIsPetImmortalChanged(null, false);
         OnPetRoamChanged(false);
         CCSPlayerControllerState.ClearAllEconItemView();
-        SchemaHelper.FreeEmptyCEconItemView();
     }
 }

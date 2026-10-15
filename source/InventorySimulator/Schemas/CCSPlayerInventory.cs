@@ -23,6 +23,31 @@ public class CCSPlayerInventory(nint handle)
         return Natives.CCSPlayerInventory_GetItemInLoadout.Invoke(Handle, team, (int)slot);
     }
 
+    // Only the player's own items, the game's stock weapons have no item ID.
+    public nint FindWeaponInLoadout(byte team, ushort def)
+    {
+        for (
+            var slot = loadout_slot_t.LOADOUT_SLOT_FIRST_WHEEL_WEAPON;
+            slot <= loadout_slot_t.LOADOUT_SLOT_LAST_WHEEL_WEAPON;
+            slot++
+        )
+        {
+            // Unhooked, so it reads the player's game loadout.
+            var ptr = Natives.CCSPlayerInventory_GetItemInLoadout.Invoke(
+                Handle,
+                team,
+                (int)slot,
+                bypasshook: true
+            );
+            if (ptr == nint.Zero)
+                continue;
+            var itemView = new CEconItemView(ptr);
+            if (itemView.ItemID != 0 && itemView.ItemDefinitionIndex == def)
+                return ptr;
+        }
+        return nint.Zero;
+    }
+
     public void SendInventoryUpdateEvent()
     {
         Natives.CCSPlayerInventory_SendInventoryUpdateEvent.Invoke(Handle);

@@ -78,10 +78,16 @@ public partial class InventorySimulator
 
     public HookResult GetItemInLoadout(DynamicHook hook)
     {
+        var team = hook.GetParam<int>(1);
         var slot = hook.GetParam<int>(2);
+        // Same as an unequipped slot, the game's base item for pets is empty.
         if (slot == (int)loadout_slot_t.LOADOUT_SLOT_PET && !ConVars.IsPetEnabled.Value)
         {
-            hook.SetReturn(SchemaHelper.GetEmptyCEconItemView());
+            hook.SetReturn(
+                SchemaHelper
+                    .GetInventoryManager()
+                    .GetBaseItemForTeam((byte)team, (loadout_slot_t)slot)
+            );
             return HookResult.Changed;
         }
         var inventory = new CCSPlayerInventory(hook.GetParam<nint>(0));
@@ -94,7 +100,6 @@ public partial class InventorySimulator
         var player = PlayerHelper.GetPlayerFromSteamId(inventory.SOCache.Owner.SteamID);
         if (player == null)
             return HookResult.Continue;
-        var team = hook.GetParam<int>(1);
         var controllerState = player.GetState();
         var def = itemView.ItemDefinitionIndex;
         var loadoutDef = ConVars.IsLoadoutEnabled.Value
@@ -107,9 +112,21 @@ public partial class InventorySimulator
             ConVars.IsFallbackTeam.Value,
             ConVars.MinModels.Value
         );
-        // Buying, the buy menu and the spawn weapons all read the weapon from here.
+        // Buying, the buy menu and the spawn weapons all read the weapon from here. The player
+        // may have it equipped in another slot of their game loadout, otherwise the game
+        // returns this same stock item when a default-equipped weapon has no skin.
         if (item == null && loadoutDef != null && loadoutDef != def)
-            item = InventoryItem.CreateStock(loadoutDef.Value);
+        {
+            var gameItem = inventory.FindWeaponInLoadout((byte)team, loadoutDef.Value);
+            if (gameItem == nint.Zero)
+                gameItem = SchemaHelper
+                    .GetInventoryManager()
+                    .GetReferenceEconItem(loadoutDef.Value);
+            if (gameItem == nint.Zero)
+                return HookResult.Continue;
+            hook.SetReturn(gameItem);
+            return HookResult.Changed;
+        }
         if (item != null)
         {
             hook.SetReturn(controllerState.GetEconItemView(team, slot, item, itemView.Handle));
