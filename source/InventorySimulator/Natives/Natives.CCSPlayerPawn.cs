@@ -24,6 +24,7 @@ public static partial class Natives
         GameData.GetSignature("CCSPlayerPawn::SetModelFromClass")
     );
 
-    public static readonly MemoryFunctionWithReturn<nint, nint> CCSPlayerPawn_SetModelFromLoadout =
-        new(GameData.GetSignature("CCSPlayerPawn::SetModelFromLoadout"));
+    public static readonly MemoryFunctionVoid<nint> CCSPlayerPawn_SetModelFromLoadout = new(
+        GameData.GetSignature("CCSPlayerPawn::SetModelFromLoadout")
+    );
 }

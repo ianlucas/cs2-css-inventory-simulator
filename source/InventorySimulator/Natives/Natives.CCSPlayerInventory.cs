@@ -19,12 +19,8 @@ public static partial class Natives
         GameData.GetSignature("CCSPlayerInventory::GetItemInLoadout")
     );
 
-    public static readonly MemoryFunctionWithReturn<
-        nint,
-        nint
-    > CCSPlayerInventory_SendInventoryUpdateEvent = new(
-        GameData.GetSignature("CCSPlayerInventory::SendInventoryUpdateEvent")
-    );
+    public static readonly MemoryFunctionVoid<nint> CCSPlayerInventory_SendInventoryUpdateEvent =
+        new(GameData.GetSignature("CCSPlayerInventory::SendInventoryUpdateEvent"));
 
     private static readonly Lazy<int> _lazyCCSPlayerInventory_m_pSOCache = new(() =>
         GameData.GetOffset("CCSPlayerInventory::m_pSOCache")
