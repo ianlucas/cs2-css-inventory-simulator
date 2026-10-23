@@ -17,6 +17,8 @@ public static class CCSPlayerControllerExtensions
         CCSPlayerControllerState
     > _controllerStateManager = [];
 
+    private const float UseTapMaxDuration = 0.25f;
+
     public static IEnumerable<CCSPlayerControllerState> GetAllStates() =>
         _controllerStateManager.Values;
 
@@ -139,28 +141,34 @@ public static class CCSPlayerControllerExtensions
             return c4.IsPlantingViaUse;
         }
 
-        public void HandleProcessUsercmds()
+        public void HandleUsePressed()
         {
+            var controllerState = self.GetState();
+            controllerState.DisposeUseCmdTimer();
+            controllerState.UsePressedAt = Server.CurrentTime;
+            controllerState.IsUseCmdBlocked = self.IsUseCmdBusy();
+        }
+
+        public void HandleUseReleased()
+        {
+            var controllerState = self.GetState();
+            // Only a tap sprays, longer holds are for using something else, like defusing the bomb.
             if (
-                (self.Buttons & PlayerButtons.Use) != 0
-                && self.PlayerPawn.Value?.IsAbleToApplySpray() == true
+                controllerState.IsUseCmdBlocked
+                || Server.CurrentTime - controllerState.UsePressedAt > UseTapMaxDuration
+                || self.IsUseCmdBusy()
+                || self.PlayerPawn.Value?.IsAbleToApplySpray() != true
             )
-            {
-                var controllerState = self.GetState();
-                if (self.IsUseCmdBusy())
-                    controllerState.IsUseCmdBlocked = true;
-                controllerState.DisposeUseCmdTimer();
-                controllerState.UseCmdTimer = Runtime.Plugin.AddTimer(
-                    0.1f,
-                    () =>
-                    {
-                        if (controllerState.IsUseCmdBlocked)
-                            controllerState.IsUseCmdBlocked = false;
-                        else if (self.IsValid && !self.IsUseCmdBusy())
-                            self.ExecuteClientCommandFromServer("css_spray");
-                    }
-                );
-            }
+                return;
+            // The buy menu opened by the use key only reaches the server a round trip later.
+            controllerState.UseCmdTimer = Runtime.Plugin.AddTimer(
+                0.1f,
+                () =>
+                {
+                    if (self.IsValid && !self.IsUseCmdBusy())
+                        self.ExecuteClientCommandFromServer("css_spray");
+                }
+            );
         }
 
         public void RegiveAgent(PlayerInventory inventory, PlayerInventory? oldInventory)

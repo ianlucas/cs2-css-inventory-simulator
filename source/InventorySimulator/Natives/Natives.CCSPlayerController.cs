@@ -10,16 +10,6 @@ namespace InventorySimulator;
 
 public static partial class Natives
 {
-    public static readonly MemoryFunctionWithReturn<
-        nint,
-        nint,
-        int,
-        bool,
-        float
-    > CCSPlayerController_ProcessUsercmds = new(
-        GameData.GetSignature("CCSPlayerController::ProcessUsercmds")
-    );
-
     public static readonly MemoryFunctionWithReturn<nint, nint> CCSPlayerController_GetPetChicken =
         new(GameData.GetSignature("CCSPlayerController::GetPetChicken"));
 

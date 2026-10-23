@@ -84,7 +84,7 @@ public static class ConVars
 
     public static readonly FakeConVar<bool> IsSprayOnUse = new(
         "invsim_spray_on_use",
-        "Apply spray when the player presses the use key.",
+        "Apply spray when the player taps the use key.",
         false
     );
 

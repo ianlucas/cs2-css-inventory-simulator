@@ -72,6 +72,20 @@ public partial class InventorySimulator
         }
     }
 
+    public void OnPlayerButtonsChanged(
+        CCSPlayerController player,
+        PlayerButtons pressed,
+        PlayerButtons released
+    )
+    {
+        if (player.IsBot)
+            return;
+        if ((pressed & PlayerButtons.Use) != 0)
+            player.HandleUsePressed();
+        else if ((released & PlayerButtons.Use) != 0)
+            player.HandleUseReleased();
+    }
+
     public HookResult OnEntityTakeDamagePre(CBaseEntity entity, CTakeDamageInfo info)
     {
         if (!ConVars.IsPetImmortal.Value)
