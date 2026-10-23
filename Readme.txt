@@ -35,7 +35,7 @@ invsim_spray_enabled true
     Enable spraying via the !spray command and/or use key.
 
 invsim_spray_on_use false
-    Apply spray when the player presses the use key.
+    Apply spray when the player taps the use key.
 
 invsim_spray_cooldown 30
     Cooldown duration in seconds between sprays per player.

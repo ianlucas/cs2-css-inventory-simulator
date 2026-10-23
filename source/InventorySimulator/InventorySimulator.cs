@@ -53,7 +53,7 @@ public partial class InventorySimulator : BasePlugin
 
     private string _lastUrl = "";
     private bool _isActivatePlayerHooked = false;
-    private bool _isProcessUsercmdsHooked = false;
+    private bool _isPlayerButtonsChangedHooked = false;
     private bool _isTakeDamageHooked = false;
     private bool _isChickenManagerPostSimulateHooked = false;
 
@@ -105,13 +105,13 @@ public partial class InventorySimulator : BasePlugin
 
     public void OnIsSprayOnUseChanged(object? _, bool value)
     {
-        if (value == _isProcessUsercmdsHooked)
+        if (value == _isPlayerButtonsChangedHooked)
             return;
         if (value)
-            Natives.CCSPlayerController_ProcessUsercmds.Hook(OnProcessUsercmds, HookMode.Post);
+            RegisterListener<Listeners.OnPlayerButtonsChanged>(OnPlayerButtonsChanged);
         else
-            Natives.CCSPlayerController_ProcessUsercmds.Unhook(OnProcessUsercmds, HookMode.Post);
-        _isProcessUsercmdsHooked = value;
+            RemoveListener<Listeners.OnPlayerButtonsChanged>(OnPlayerButtonsChanged);
+        _isPlayerButtonsChangedHooked = value;
     }
 
     public void OnIsPetImmortalChanged(object? _, bool value)

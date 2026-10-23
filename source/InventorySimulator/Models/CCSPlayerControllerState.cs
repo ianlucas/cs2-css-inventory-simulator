@@ -21,6 +21,7 @@ public class CCSPlayerControllerState(ulong steamId)
     public PlayerInventory? Inventory = Inventories.Get(steamId);
     public Timer? UseCmdTimer;
     public bool IsUseCmdBlocked = false;
+    public float UsePressedAt = 0;
     public Action? PostFetchCallback;
 
     private static readonly ConcurrentDictionary<

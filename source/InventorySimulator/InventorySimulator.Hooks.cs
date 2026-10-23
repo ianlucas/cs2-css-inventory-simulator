@@ -36,15 +36,6 @@ public partial class InventorySimulator
         return HookResult.Continue;
     }
 
-    public HookResult OnProcessUsercmds(DynamicHook hook)
-    {
-        if (!ConVars.IsSprayOnUse.Value)
-            return HookResult.Continue;
-        var player = hook.GetParam<CCSPlayerController>(0);
-        player.HandleProcessUsercmds();
-        return HookResult.Continue;
-    }
-
     public HookResult OnGiveNamedItemPre(DynamicHook hook)
     {
         var itemServices = hook.GetParam<CCSPlayer_ItemServices>(0);
