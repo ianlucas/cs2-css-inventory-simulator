@@ -36,6 +36,9 @@ public class InventoryItem
     [JsonPropertyName("seed")]
     public int? Seed { get; set; }
 
+    [JsonPropertyName("souvenir")]
+    public bool? Souvenir { get; set; }
+
     [JsonPropertyName("stattrak")]
     public int? Stattrak { get; set; }
 
@@ -147,6 +150,11 @@ public class InventoryItem
                 {
                     var sticker = TypeHelper.ViewAs<uint, float>(keychain.Sticker.Value);
                     attributes.Add(($"{slot} sticker", sticker));
+                }
+                if (keychain.Highlight != null)
+                {
+                    var highlight = TypeHelper.ViewAs<uint, float>(keychain.Highlight.Value);
+                    attributes.Add(($"{slot} highlight", highlight));
                 }
                 if (keychain.X != null)
                     attributes.Add(($"{slot} offset x", keychain.X.Value));

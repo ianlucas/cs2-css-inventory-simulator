@@ -12,6 +12,9 @@ public class KeychainItem
     [JsonPropertyName("def")]
     public uint Def { get; set; }
 
+    [JsonPropertyName("highlight")]
+    public uint? Highlight { get; set; }
+
     [JsonPropertyName("seed")]
     public int Seed { get; set; }
 

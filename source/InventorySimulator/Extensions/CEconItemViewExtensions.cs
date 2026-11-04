@@ -28,6 +28,8 @@ public static class CEconItemViewExtensions
                 self.AccountID = new CSteamID(steamId.Value).GetAccountID().m_AccountID;
             if (isMelee)
                 self.EntityQuality = 3;
+            else if (item.Souvenir == true)
+                self.EntityQuality = 12;
             else
                 self.EntityQuality = item.Stattrak >= 0 ? 9 : 4;
             self.CustomName = item.Nametag ?? "";
