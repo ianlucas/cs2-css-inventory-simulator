@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 
 namespace InventorySimulator;
@@ -15,7 +16,7 @@ public static partial class Natives
     );
 
     private static readonly Lazy<int> _lazyCChicken_m_bCanRoam = new(() =>
-        GameData.GetOffset("CChicken::m_bCanRoam")
+        Schema.GetSchemaOffset("CChicken", "m_bSpawnDyingParticles") - 1
     );
 
     public static int CChicken_m_bCanRoam => _lazyCChicken_m_bCanRoam.Value;
