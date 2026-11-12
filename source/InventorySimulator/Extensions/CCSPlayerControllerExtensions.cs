@@ -161,14 +161,11 @@ public static class CCSPlayerControllerExtensions
             )
                 return;
             // The buy menu opened by the use key only reaches the server a round trip later.
-            controllerState.UseCmdTimer = Runtime.Plugin.AddTimer(
-                0.1f,
-                () =>
-                {
-                    if (self.IsValid && !self.IsUseCmdBusy())
-                        self.ExecuteClientCommandFromServer("css_spray");
-                }
-            );
+            controllerState.UseCmdTimer = Runtime.Plugin.AddTimer(0.1f, () =>
+            {
+                if (self.IsValid && !self.IsUseCmdBusy())
+                    self.ExecuteClientCommandFromServer("css_spray");
+            });
         }
 
         public void RegiveAgent(PlayerInventory inventory, PlayerInventory? oldInventory)
@@ -314,38 +311,35 @@ public static class CCSPlayerControllerExtensions
                 }
                 var weapon = self.GiveNamedItem<CBasePlayerWeapon>(actualDesignerName);
                 if (weapon != null)
-                    Server.RunOnTick(
-                        Server.TickCount + 32,
-                        () =>
+                    Server.RunOnTick(Server.TickCount + 32, () =>
+                    {
+                        if (weapon.IsValid)
                         {
-                            if (weapon.IsValid)
+                            weapon.Clip1 = clip;
+                            Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
+                            weapon.ReserveAmmo[0] = reserve;
+                            Utilities.SetStateChanged(
+                                weapon,
+                                "CBasePlayerWeapon",
+                                "m_pReserveAmmo"
+                            );
+                            Server.NextWorldUpdate(() =>
                             {
-                                weapon.Clip1 = clip;
-                                Utilities.SetStateChanged(weapon, "CBasePlayerWeapon", "m_iClip1");
-                                weapon.ReserveAmmo[0] = reserve;
-                                Utilities.SetStateChanged(
-                                    weapon,
-                                    "CBasePlayerWeapon",
-                                    "m_pReserveAmmo"
-                                );
-                                Server.NextWorldUpdate(() =>
+                                if (active && self.IsValid)
                                 {
-                                    if (active && self.IsValid)
+                                    var command = gearSlot switch
                                     {
-                                        var command = gearSlot switch
-                                        {
-                                            gear_slot_t.GEAR_SLOT_RIFLE => "slot1",
-                                            gear_slot_t.GEAR_SLOT_PISTOL => "slot2",
-                                            gear_slot_t.GEAR_SLOT_KNIFE => "slot3",
-                                            _ => null,
-                                        };
-                                        if (command != null)
-                                            self.ExecuteClientCommand(command);
-                                    }
-                                });
-                            }
+                                        gear_slot_t.GEAR_SLOT_RIFLE => "slot1",
+                                        gear_slot_t.GEAR_SLOT_PISTOL => "slot2",
+                                        gear_slot_t.GEAR_SLOT_KNIFE => "slot3",
+                                        _ => null,
+                                    };
+                                    if (command != null)
+                                        self.ExecuteClientCommand(command);
+                                }
+                            });
                         }
-                    );
+                    });
             }
         }
 
@@ -388,13 +382,14 @@ public static class CCSPlayerControllerExtensions
             var movementServices = pawn.MovementServices?.As<CCSPlayer_MovementServices>();
             if (movementServices == null)
                 return;
-            var trace = stackalloc CGameTrace[1];
-            if (!pawn.IsAbleToApplySpray((nint)trace) || (nint)trace == nint.Zero)
+            byte* traceBuffer = stackalloc byte[Natives.CGameTrace_Size];
+            var trace = new CGameTrace((nint)traceBuffer);
+            if (!pawn.IsAbleToApplySpray(trace.Handle) || !trace.IsValid)
                 return;
             self.EmitSound("SprayCan.Shake");
             self.GetState().SprayUsedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var endPos = SchemaHelper.ToVector(trace->EndPos);
-            var hitNormal = SchemaHelper.ToVector(trace->HitNormal);
+            var endPos = SchemaHelper.ToVector(trace.EndPos);
+            var hitNormal = SchemaHelper.ToVector(trace.HitNormal);
             var sprayDecal = Utilities.CreateEntityByName<CPlayerSprayDecal>("player_spray_decal");
             if (sprayDecal != null)
             {

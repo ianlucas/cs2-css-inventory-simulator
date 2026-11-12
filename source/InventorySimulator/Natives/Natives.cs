@@ -13,23 +13,31 @@ public static partial class Natives
 {
     private static nint GetGameSystemByName(string name)
     {
-        // From CounterStrikeSharp's gamedata, it points at "mov reg, [rip + sm_pFirst]".
+        // From CounterStrikeSharp's gamedata, it points at "mov reg, [rip + sm_pFirst]". Offsets
+        // are read here, not from lazy fields, because this runs during the type's static
+        // initialization.
         var signature = GameData.GetSignature("IGameSystem_InitAllSystems_pFirst");
         var address = NativeAPI.FindSignature(Addresses.ServerPath, signature);
         if (address == nint.Zero)
             throw new InvalidOperationException(
                 "Failed to locate the game system list. The signature may be outdated."
             );
-        var first = address + 7 + Marshal.ReadInt32(address + 3);
+        var displacementOffset = GameData.GetOffset(
+            "IGameSystem_InitAllSystems_pFirst::DisplacementOffset"
+        );
+        var instructionSize = GameData.GetOffset(
+            "IGameSystem_InitAllSystems_pFirst::InstructionSize"
+        );
+        var m_pNext = GameData.GetOffset("CBaseGameSystemFactory::m_pNext");
+        var m_pName = GameData.GetOffset("CBaseGameSystemFactory::m_pName");
+        var getStaticGameSystem = GameData.GetOffset("IGameSystemFactory::GetStaticGameSystem");
+        var first = address + instructionSize + Marshal.ReadInt32(address + displacementOffset);
         var factory = Marshal.ReadIntPtr(first);
         while (factory != nint.Zero)
         {
-            // CBaseGameSystemFactory::m_pName
-            if (Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(factory + 0x10)) == name)
-                // IGameSystemFactory::GetStaticGameSystem
-                return VirtualFunction.Create<nint, nint>(factory, 9)(factory);
-            // CBaseGameSystemFactory::m_pNext
-            factory = Marshal.ReadIntPtr(factory + 0x8);
+            if (Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(factory + m_pName)) == name)
+                return VirtualFunction.Create<nint, nint>(factory, getStaticGameSystem)(factory);
+            factory = Marshal.ReadIntPtr(factory + m_pNext);
         }
         throw new InvalidOperationException(
             $"Failed to locate game system '{name}'. The game system may not exist in the current game version."

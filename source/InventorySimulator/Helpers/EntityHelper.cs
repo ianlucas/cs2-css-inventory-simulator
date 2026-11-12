@@ -38,7 +38,7 @@ public static class EntityHelper
         if (team != (byte)CsTeam.Terrorist && team != (byte)CsTeam.CounterTerrorist)
             return null;
         var spawnPoints = new List<SpawnPoint>();
-        var randomSpawn = ConVar.Find("mp_randomspawn")?.GetPrimitiveValue<int>() ?? 0;
+        var randomSpawn = ConVar<int>.Find("mp_randomspawn")?.Value ?? 0;
         if (randomSpawn == 1 || randomSpawn == team)
             spawnPoints = GetAllEnabledSpawnPoints("info_deathmatch_spawn");
         if (spawnPoints.Count == 0)

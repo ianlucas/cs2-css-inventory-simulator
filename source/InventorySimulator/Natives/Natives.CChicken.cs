@@ -15,8 +15,10 @@ public static partial class Natives
         GameData.GetSignature("CChicken::InitPet")
     );
 
+    // Relative to m_bSpawnDyingParticles, so it follows layout changes on its own.
     private static readonly Lazy<int> _lazyCChicken_m_bCanRoam = new(() =>
-        Schema.GetSchemaOffset("CChicken", "m_bSpawnDyingParticles") - 1
+        Schema.GetSchemaOffset("CChicken", "m_bSpawnDyingParticles")
+        + GameData.GetOffset("CChicken::m_bCanRoam")
     );
 
     public static int CChicken_m_bCanRoam => _lazyCChicken_m_bCanRoam.Value;

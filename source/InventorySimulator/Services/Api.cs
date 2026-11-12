@@ -131,10 +131,10 @@ public class Api
             return true;
         if (!isEnabled)
             return false;
-        var bucket = buckets.GetOrAdd(
-            (userId, targetUid),
-            _ => new RateLimitBucket(capacity, refillIntervalSeconds)
-        );
+        var bucket = buckets.GetOrAdd((userId, targetUid), _ => new RateLimitBucket(
+            capacity,
+            refillIntervalSeconds
+        ));
         return bucket.TryConsume();
     }
 
