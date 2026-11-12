@@ -12,9 +12,5 @@ namespace InventorySimulator;
 public readonly struct SOID_t
 {
     private readonly ulong m_id;
-    private readonly uint m_type;
-    private readonly uint m_padding;
     public readonly ulong SteamID => m_id;
-    public readonly ulong Part1 => m_id;
-    public readonly ulong Part2 => m_type;
 }

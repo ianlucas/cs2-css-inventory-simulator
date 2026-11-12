@@ -15,18 +15,15 @@ public static partial class UrlHelper
         if (!Uri.TryCreate(urlString, UriKind.Absolute, out var uri))
             return format;
         return PlaceholderPattern()
-            .Replace(
-                format,
-                match =>
-                {
-                    var prop = uri.GetType()
-                        .GetProperty(
-                            match.Groups[1].Value,
-                            BindingFlags.Public | BindingFlags.Instance
-                        );
-                    return prop?.GetValue(uri)?.ToString() ?? match.Value;
-                }
-            );
+            .Replace(format, match =>
+            {
+                var prop = uri.GetType()
+                    .GetProperty(
+                        match.Groups[1].Value,
+                        BindingFlags.Public | BindingFlags.Instance
+                    );
+                return prop?.GetValue(uri)?.ToString() ?? match.Value;
+            });
     }
 
     [GeneratedRegex(@"\{(\w+)\}")]

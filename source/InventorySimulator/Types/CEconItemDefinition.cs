@@ -14,16 +14,19 @@ public class CEconItemDefinition(nint handle)
     public nint Handle { get; set; } = handle;
     public bool IsValid => Handle != nint.Zero;
 
-    public ushort DefIndex => (ushort)Marshal.ReadInt16(Handle + 0x10);
+    public ushort DefIndex =>
+        (ushort)Marshal.ReadInt16(Handle + Natives.CEconItemDefinition_m_nDefIndex);
 
     public string? DefinitionName
     {
         get
         {
-            var ptr = Marshal.ReadIntPtr(Handle + 0x260);
+            var ptr = Marshal.ReadIntPtr(Handle + Natives.CEconItemDefinition_m_pszDefinitionName);
             return ptr != nint.Zero ? Marshal.PtrToStringUTF8(ptr) : null;
         }
     }
 
-    public loadout_slot_t DefaultLoadoutSlot => (loadout_slot_t)Marshal.ReadInt32(Handle + 0x338);
+    public loadout_slot_t DefaultLoadoutSlot =>
+        (loadout_slot_t)
+            Marshal.ReadInt32(Handle + Natives.CEconItemDefinition_m_iDefaultLoadoutSlot);
 }

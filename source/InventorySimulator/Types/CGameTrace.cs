@@ -9,12 +9,14 @@ using System.Runtime.InteropServices;
 namespace InventorySimulator;
 
 // Thanks @Nukoooo.
-[StructLayout(LayoutKind.Explicit, Size = 0xC0)]
-public struct CGameTrace
+public struct CGameTrace(nint handle)
 {
-    [FieldOffset(0x84)]
-    public Vector3 EndPos;
+    public nint Handle { get; set; } = handle;
+    public readonly bool IsValid => Handle != nint.Zero;
 
-    [FieldOffset(0x90)]
-    public Vector3 HitNormal;
+    public readonly Vector3 EndPos =>
+        Marshal.PtrToStructure<Vector3>(Handle + Natives.CGameTrace_m_vEndPos);
+
+    public readonly Vector3 HitNormal =>
+        Marshal.PtrToStructure<Vector3>(Handle + Natives.CGameTrace_m_vHitNormal);
 }
